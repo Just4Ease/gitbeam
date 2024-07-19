@@ -26,13 +26,13 @@ func (commit Commit) Validate() error {
 }
 
 type Repo struct {
-	Id          string         `json:"id"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	URL         string         `json:"url"`
-	ForkCounts  map[string]int `json:"forkCounts"`
-	Language    string         `json:"language"`
-	Attributes  map[string]any `json:"attributes,omitempty"`
+	Id          int64  `json:"id"`
+	Name        string `json:"name"`
+	Owner       string `json:"owner"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	ForkCount   int    `json:"forkCounts"`
+	Language    string `json:"language"`
 }
 
 func (r Repo) Validate() error {

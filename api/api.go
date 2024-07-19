@@ -1,19 +1,20 @@
 package api
 
 import (
-	"gitbeam/service"
+	"gitbeam/core"
 	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
 )
 
 type API struct {
-	service service.GitBeamService
+	service *core.GitBeamService
 	logger  *logrus.Logger
 }
 
-func New(service service.GitBeamService) *API {
-	return &API{service: service}
+func New(service *core.GitBeamService, logger *logrus.Logger) *API {
+	return &API{service: service, logger: logger.WithField("serviceName", "api").Logger}
 }
 
-func (a API) Routes(mux chi.Mux) {
+func (a API) Routes(router *chi.Mux) {
 	// Mount all route paths here.
 }
