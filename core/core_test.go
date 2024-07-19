@@ -46,7 +46,7 @@ func TestGetRepoByOwnerAndRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.TestName, func(t *testing.T) {
-			repo, err := service.getByOwnerAndRepoName(ctx, test.OwnerName, test.RepoName)
+			repo, err := service.GetByOwnerAndRepoName(ctx, test.OwnerName, test.RepoName)
 			if test.ExpectedError != nil {
 				assert.Equal(t, test.ExpectedError, err)
 				assert.Nil(t, repo)
