@@ -2,35 +2,42 @@ package core
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"gitbeam/events/topics"
 	"gitbeam/models"
 	"gitbeam/repository"
 	"gitbeam/store"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/google/go-github/v63/github"
 	"github.com/sirupsen/logrus"
+	"net/http"
 	"time"
 )
 
 var (
-	ErrRepositoryNotFound       = errors.New("repository not found")
+	ErrRepositoryNotFound       = errors.New("dataStore not found")
 	ErrOwnerAndRepoNameRequired = errors.New("owner and repo name required")
 )
 
 type GitBeamService struct {
 	githubClient *github.Client
 	logger       *logrus.Logger
-	repository   repository.DataStore
+	dataStore    repository.DataStore
+	eventStore   store.EventStore
 }
 
 func NewGitBeamService(
 	logger *logrus.Logger,
 	eventStore store.EventStore,
 	dataStore repository.DataStore,
+	httpClient *http.Client, // Nullable.
 ) *GitBeamService {
-	client := github.NewClient(nil) // Didn't need to pass this as a top level dependency into the git beam service.
+	client := github.NewClient(httpClient) // Didn't need to pass this as a top level dependency into the git beam service.
 	return &GitBeamService{
 		githubClient: client,
+		dataStore:    dataStore,
+		eventStore:   eventStore,
 		logger:       logger.WithField("serviceName", "GitBeamService").Logger,
 	}
 }
@@ -71,10 +78,21 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, ownerName, re
 func (g GitBeamService) ListCommits(ctx context.Context, ownerName, repoName string) ([]*models.Commit, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "ListCommits")
 
-	commits, err := g.repository.ListCommits(ctx)
+	var commits []*models.Commit
+	var err error
+	hasAttemptedRetry := false
+
+retry:
+	commits, err = g.dataStore.ListCommits(ctx)
 	if err != nil {
 		useLogger.WithError(err).Errorln("failed to list commits from database")
 		return make([]*models.Commit, 0), nil
+	}
+
+	if len(commits) == 0 && !hasAttemptedRetry {
+		_ = g.FetchAndSaveCommits(ctx, ownerName, repoName)
+		hasAttemptedRetry = true
+		goto retry
 	}
 
 	return commits, err
@@ -107,11 +125,36 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, ownerName, repo
 			//RepoId:  gitCommit.R,
 		}
 
-		if err := g.repository.SaveCommit(ctx, commit); err != nil {
+		if err := g.dataStore.SaveCommit(ctx, commit); err != nil {
 			useLogger.WithError(err).Errorln("SaveCommit")
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.OwnerAndRepoName) (*models.Repo, error) {
+	useLogger := g.logger.WithContext(ctx).WithField("methodName", "StartBeamingCommits")
+	repo, err := g.GetByOwnerAndRepoName(ctx, payload.OwnerName, payload.RepoName)
+	if err != nil {
+		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
+		return nil, err
+	}
+
+	if err := g.dataStore.StoreRepository(ctx, repo); err != nil {
+		useLogger.WithError(err).Errorln("StoreRepository")
+		return nil, err
+	}
+
+	data, err := json.Marshal(repo)
+	if err != nil {
+		useLogger.WithError(err).Errorln("json.Marshal: failed to marshal repo before publishing to event store.")
+		return nil, err
+	}
+
+	// This is a channel-based event store, so checking of errors aren't needed here.
+	_ = g.eventStore.Publish(topics.RepoCreated, data)
+
+	return repo, nil
 }

@@ -47,7 +47,7 @@ func main() {
 
 	// If the dependencies were more than 3, I would use a variadic function to inject them.
 	//Clarity is better here for this exercise.
-	service := core.NewGitBeamService(logger, eventStore, dataStore)
+	service := core.NewGitBeamService(logger, eventStore, dataStore, nil)
 
 	// To handle event-based background activities. ( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
 	go events.NewEventHandler(eventStore, logger, service).Listen()
@@ -55,14 +55,15 @@ func main() {
 	router := chi.NewRouter()
 	api.New(service, logger).Routes(router)
 
+	startAndManageHTTPServer(router, logger)
+}
+
+func startAndManageHTTPServer(router *chi.Mux, logger *logrus.Logger) {
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
 	}
-	startAndManageHTTPServer(server, logger)
-}
 
-func startAndManageHTTPServer(server *http.Server, logger *logrus.Logger) {
 	// Channel to listen for signals
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
@@ -88,7 +89,7 @@ func startAndManageHTTPServer(server *http.Server, logger *logrus.Logger) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Attempt to gracefully shutdown the server
+		// Attempt to gracefully shut down the server
 		if err := server.Shutdown(ctx); err != nil {
 			logger.WithError(err).Error("Server forced to shutdown")
 		}

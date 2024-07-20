@@ -6,12 +6,14 @@ import (
 )
 
 type Commit struct {
-	Message string    `json:"message"`
-	Author  string    `json:"author"`
-	Date    time.Time `json:"date"`
-	URL     string    `json:"url"`
-	Id      string    `json:"id"`
-	RepoId  string    `json:"repoId"`
+	Message        string    `json:"message"`
+	Author         string    `json:"author"`
+	Date           time.Time `json:"date"`
+	URL            string    `json:"url"`
+	Id             string    `json:"id"`
+	RepoId         string    `json:"repoId"`
+	ParentCommitId string    `json:"parentCommitId"`
+	Branch         string    `json:"branch"`
 }
 
 func (commit Commit) Validate() error {
