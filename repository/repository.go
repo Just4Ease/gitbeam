@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"gitbeam/models"
+	"time"
 )
 
 //go:generate mockgen -source=repository.go -destination=../mocks/data_store_mock.go -package=mocks
@@ -12,7 +13,7 @@ type DataStore interface {
 	GetRepoByOwner(ctx context.Context, owner *models.OwnerAndRepoName) (*models.Repo, error)
 	ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error)
 	CountSavedCommits(ctx context.Context, owner models.OwnerAndRepoName) (int64, error)
-	GetLastCommit(ctx context.Context, owner models.OwnerAndRepoName) (*models.Commit, error)
-	GetCommitBySHA(ctx context.Context, sha string) (*models.Commit, error)
+	GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error)
+	GetCommitBySHA(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error)
 	SaveCommit(ctx context.Context, payload *models.Commit) error
 }

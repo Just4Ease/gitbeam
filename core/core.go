@@ -63,7 +63,6 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models
 	}
 
 	repo := &models.Repo{
-		Id:            gitRepo.GetID(),
 		Name:          gitRepo.GetName(),
 		Owner:         gitRepo.GetOwner().GetLogin(),
 		Description:   gitRepo.GetDescription(),
@@ -101,7 +100,8 @@ retry:
 	}
 
 	if len(commits) == 0 && !hasAttemptedRetry {
-		commit, err := g.dataStore.GetLastCommit(ctx, filters.Owner)
+		// TODO: Come back and review this.
+		commit, err := g.dataStore.GetLastCommit(ctx, &filters.Owner, nil)
 		if err != nil {
 			return make([]*models.Commit, 0), nil
 		}
@@ -116,17 +116,20 @@ retry:
 
 func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, owner *models.OwnerAndRepoName, startTimeCursor time.Time) error {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetByOwnerAndRepoName")
-
-	repo, err := g.GetByOwnerAndRepoName(ctx, owner)
-	if err != nil {
-		useLogger.WithError(err).Errorln("xxxGetByOwnerAndRepoName")
-		return err
-	}
-
 	pageNumber := 1
 
+	lastCommit, _ := g.dataStore.GetLastCommit(ctx, owner, &startTimeCursor)
+	if lastCommit != nil {
+		startTimeCursor = lastCommit.Date.Add(time.Millisecond)
+		useLogger.WithFields(logrus.Fields{
+			"repo_name":  owner.RepoName,
+			"owner_name": owner.OwnerName,
+			"start_time": startTimeCursor,
+		}).Infoln("updated start time to be 1ms greater than the last record in the database so as not to repeat commits or waste rate limits.")
+	}
+
 repeat:
-	gitCommits, raw, err := g.githubClient.Repositories.ListCommits(ctx, repo.Owner, repo.Name, &github.CommitsListOptions{
+	gitCommits, response, err := g.githubClient.Repositories.ListCommits(ctx, owner.OwnerName, owner.RepoName, &github.CommitsListOptions{
 		Since: startTimeCursor,
 		Until: time.Now(),
 		ListOptions: github.ListOptions{
@@ -140,34 +143,36 @@ repeat:
 		return err
 	}
 
-	g.logger.WithFields(logrus.Fields{
-		"response": raw,
-	}).Info("Raw API response from GitHub")
+	useLogger.WithField("rate_limits", response.Rate).Infoln("Raw API response from GitHub")
 
 	for _, gitCommit := range gitCommits {
+		c := gitCommit.GetCommit()
+
 		commit := &models.Commit{
 			SHA:             gitCommit.GetSHA(),
-			Message:         gitCommit.GetCommit().GetMessage(),
-			Author:          gitCommit.GetCommit().Committer.GetLogin(),
-			Date:            gitCommit.GetCommit().Committer.GetDate().Time,
-			URL:             gitCommit.GetCommit().GetURL(),
+			Message:         c.GetMessage(),
+			Author:          gitCommit.GetCommitter().GetLogin(),
+			Date:            c.Committer.GetDate().Time,
+			URL:             gitCommit.GetHTMLURL(),
+			OwnerName:       owner.OwnerName,
+			RepoName:        owner.RepoName,
 			ParentCommitIDs: make([]string, 0),
 		}
 
-		parents := gitCommit.GetCommit().Parents
+		parents := gitCommit.Parents
 		for _, parent := range parents {
 			commit.ParentCommitIDs = append(commit.ParentCommitIDs, parent.GetSHA())
 		}
 
 		if err := g.dataStore.SaveCommit(ctx, commit); err != nil {
-			useLogger.WithError(err).Errorln("SaveCommit")
+			useLogger.WithError(err).Errorln("error saving commit to storage.")
 			return err
 		}
 	}
 
 	// if the previous/above attempt to list commits from github had data, then let's check if a new page will have data,
 	// else we exit until FetchAndSaveCommits is called by a cron.
-	if len(gitCommits) > 0 && raw.Rate.Remaining > 0 { // TODO: Apply rate limiting rules to respect github's rate limit flow.
+	if len(gitCommits) > 0 && response.Rate.Remaining > 0 { // TODO: Apply rate limiting rules to respect github's rate limit flow.
 		pageNumber += 1
 		goto repeat
 	}
@@ -186,9 +191,11 @@ func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.
 		return nil, err
 	}
 
-	if err := g.dataStore.StoreRepository(ctx, repo); err != nil {
-		useLogger.WithError(err).Errorln("StoreRepository")
-		return nil, err
+	if !repo.IsSaved {
+		if err := g.dataStore.StoreRepository(ctx, repo); err != nil {
+			useLogger.WithError(err).Errorln("StoreRepository")
+			return nil, err
+		}
 	}
 
 	if payload.StartTime != nil {
@@ -198,7 +205,7 @@ func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.
 			return nil, err
 		}
 
-		repo.Meta["startTime"] = t // To be consumed by the commit background activity.
+		repo.Meta["startTime"] = t.Format(time.RFC3339) // To be consumed by the commit background activity.
 	}
 
 	data, err := json.Marshal(repo)

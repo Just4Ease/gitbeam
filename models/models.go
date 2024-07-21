@@ -2,6 +2,7 @@ package models
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"time"
 )
 
@@ -9,20 +10,22 @@ type Commit struct {
 	Date            time.Time `json:"date"`
 	Message         string    `json:"message"`
 	Author          string    `json:"author"`
+	RepoName        string    `json:"repoName"`
+	OwnerName       string    `json:"ownerName"`
 	URL             string    `json:"url"`
-	SHA             string    `json:"id"`
-	RepoId          string    `json:"repoId"`
+	SHA             string    `json:"sha"`
 	ParentCommitIDs []string  `json:"parentCommitIDs"`
 }
 
 func (commit Commit) Validate() error {
 	return validation.ValidateStruct(&commit,
+		validation.Field(&commit.SHA, validation.Required, is.Hexadecimal),
 		validation.Field(&commit.Message, validation.Required),
 		validation.Field(&commit.Author, validation.Required),
+		validation.Field(&commit.URL, validation.Required, is.URL),
+		validation.Field(&commit.OwnerName, validation.Required),
+		validation.Field(&commit.RepoName, validation.Required),
 		validation.Field(&commit.Date, validation.Required),
-		validation.Field(&commit.RepoId, validation.Required),
-		validation.Field(&commit.SHA, validation.Required),
-		validation.Field(&commit.RepoId, validation.Required),
 		validation.Field(&commit.ParentCommitIDs, validation.Required),
 	)
 }
@@ -49,7 +52,6 @@ type Repo struct {
 	Description   string         `json:"description"`
 	URL           string         `json:"url"`
 	Languages     string         `json:"language"`
-	Id            int64          `json:"id"`
 	ForkCount     int            `json:"forkCounts"`
 	StarCount     int            `json:"starCounts"`
 	OpenIssues    int            `json:"openIssues"`

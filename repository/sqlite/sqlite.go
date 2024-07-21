@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"gitbeam/models"
 	"gitbeam/repository"
 	"time"
@@ -21,17 +22,21 @@ func (s sqliteRepo) GetRepoByOwner(ctx context.Context, owner *models.OwnerAndRe
 	return scanRepoRow(row)
 }
 
-func (s sqliteRepo) GetLastCommit(ctx context.Context, owner models.OwnerAndRepoName) (*models.Commit, error) {
+func (s sqliteRepo) GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error) {
+	clause := `SELECT * from commits WHERE owner_name = ? AND repo_name = ?`
+	if startTime != nil {
+		clause = fmt.Sprintf("%s AND commit_date >= '%s'", clause, startTime.Format(time.RFC3339))
+	}
+
+	query := fmt.Sprintf(`%s ORDER BY commit_date DESC LIMIT 1`, clause)
 	row := s.dataStore.QueryRowContext(ctx,
-		`SELECT * from commits WHERE owner_name = ? AND repo_name = ? 
-                      ORDER BY commit_timestamp DESC LIMIT 1`, owner.OwnerName, owner.RepoName)
+		query, owner.OwnerName, owner.RepoName)
 	return scanCommitRow(row)
 }
 
 func (s sqliteRepo) StoreRepository(ctx context.Context, payload *models.Repo) error {
 	insertSQL := `
         INSERT INTO repos (
-			id,
 			repo_name,
 			owner_name,
 			description,
@@ -45,11 +50,10 @@ func (s sqliteRepo) StoreRepository(ctx context.Context, payload *models.Repo) e
 			time_created,
 			time_updated
 		)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	meta, _ := json.Marshal(payload.Meta)
 	_, err := s.dataStore.ExecContext(ctx, insertSQL,
-		payload.Id,
 		payload.Name,
 		payload.Owner,
 		payload.Description,
@@ -134,37 +138,55 @@ func (s sqliteRepo) ListCommits(ctx context.Context, filter models.ListCommitFil
 	return commits, nil
 }
 
-func (s sqliteRepo) GetCommitBySHA(ctx context.Context, sha string) (*models.Commit, error) {
-	row := s.dataStore.QueryRowContext(ctx, "SELECT * from commits WHERE sha = ?", sha)
+func (s sqliteRepo) GetCommitBySHA(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error) {
+	row := s.dataStore.QueryRowContext(ctx, "SELECT * from commits WHERE owner_name = ? AND repo_name = ? AND sha = ? LIMIT 1", owner.OwnerName, owner.RepoName, sha)
 	return scanCommitRow(row)
 }
 
 func (s sqliteRepo) SaveCommit(ctx context.Context, commit *models.Commit) error {
-	// TODO: Get duplicate and update or overwrite it with the commit data.
-	// ( this is in the case a commit message was updated via the git append command from it's source )
-	//s.getCommitDuplicateById(ctx, commit.SHA)
+	if existingCommit, _ := s.GetCommitBySHA(ctx, models.OwnerAndRepoName{
+		OwnerName: commit.OwnerName,
+		RepoName:  commit.RepoName,
+	}, commit.SHA); existingCommit != nil {
+		// TODO: carry out commit update on disk this is in the case a commit message was updated via the git append command from it's source.
+		return nil
+	}
 
 	insertSQL := `
         INSERT INTO commits (
             sha,
 			message,
 			author,
+			repo_name,
+			owner_name,
 			url,
 			parent_commit_ids,
 			commit_date           
 		)
-        VALUES (?, ?, ?, ?, ?, ?)`
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
-	serializedParentCommitIds, _ := json.Marshal(commit.ParentCommitIDs)
+	serializedParentCommitIds, err := json.Marshal(commit.ParentCommitIDs)
+	if err != nil {
+		fmt.Println("error serializing parent commit ids", err)
+		return err
+	}
 
-	_, err := s.dataStore.ExecContext(ctx, insertSQL,
+	fmt.Println("commit.sha and parent: ", commit.SHA, string(serializedParentCommitIds))
+
+	_, err = s.dataStore.ExecContext(ctx, insertSQL,
 		commit.SHA,
 		commit.Message,
 		commit.Author,
+		commit.RepoName,
+		commit.OwnerName,
 		commit.URL,
-		serializedParentCommitIds,
+		string(serializedParentCommitIds),
 		commit.Date.Format(time.RFC3339),
 	)
+
+	if err != nil {
+		fmt.Println(err, " err writing.")
+	}
 
 	return err
 }

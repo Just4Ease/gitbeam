@@ -56,16 +56,19 @@ func (e EventHandlers) handleRepoCreated() error {
 		_ = utils.UnPack(event.Data(), &repo)
 		ctx := context.Background()
 
-		startTime, ok := repo.Meta["startTime"].(time.Time)
+		startTimeString, ok := repo.Meta["startTime"].(string)
+		var startTime time.Time
 		if ok {
-			startTime = repo.TimeCreated // Fall back to when the repo was created as the point of mirroring.
+			tt, _ := time.Parse(time.RFC3339, startTimeString)
+			startTime = tt // Fall back to when the repo was created as the point of mirroring.
+		} else {
+			startTime = repo.TimeCreated
 		}
 
 		e.logger.WithFields(logrus.Fields{
-			"eventPayload":       event.Data(),
-			"transformedPayload": repo,
-			"startTime":          startTime,
-		})
+			"repo":      repo,
+			"startTime": startTime,
+		}).Infoln("started beaming repository commits with the following payload")
 
 		return e.service.FetchAndSaveCommits(ctx, &models.OwnerAndRepoName{
 			OwnerName: repo.Owner,

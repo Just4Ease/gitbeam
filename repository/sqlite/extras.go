@@ -10,7 +10,6 @@ import (
 
 const repoTableSetup = `
 CREATE TABLE IF NOT EXISTS repos (
-    	id INT PRIMARY KEY UNIQUE,
 		repo_name TEXT,
 		owner_name TEXT,
 		description TEXT,
@@ -22,7 +21,8 @@ CREATE TABLE IF NOT EXISTS repos (
 		watchers_count INT,
 		open_issues_count INT,
 		time_created DATETIME,
-		time_updated DATETIME
+		time_updated DATETIME,
+		UNIQUE (repo_name, owner_name)
 )
 `
 
@@ -30,7 +30,6 @@ func scanRepoRow(row *sql.Row) (*models.Repo, error) {
 	var repo models.Repo
 	var meta string
 	if err := row.Scan(
-		&repo.Id,
 		&repo.Name,
 		&repo.Owner,
 		&repo.Description,
@@ -48,6 +47,9 @@ func scanRepoRow(row *sql.Row) (*models.Repo, error) {
 	}
 
 	_ = utils.UnPack(meta, &repo.Meta)
+	if repo.Meta == nil {
+		repo.Meta = make(map[string]any)
+	}
 	return &repo, nil
 }
 
@@ -55,7 +57,6 @@ func scanRepoRows(rows *sql.Rows) (*models.Repo, error) {
 	var repo models.Repo
 	var meta string
 	if err := rows.Scan(
-		&repo.Id,
 		&repo.Name,
 		&repo.Owner,
 		&repo.Description,
@@ -73,17 +74,23 @@ func scanRepoRows(rows *sql.Rows) (*models.Repo, error) {
 	}
 
 	_ = utils.UnPack(meta, &repo.Meta)
+	if repo.Meta == nil {
+		repo.Meta = make(map[string]any)
+	}
 	return &repo, nil
 }
 
 const commitsTableSetup = `
 CREATE TABLE IF NOT EXISTS commits (
-    	sha TEXT PRIMARY KEY UNIQUE,
+    	sha TEXT PRIMARY KEY,
 		message TEXT,
 		author TEXT,
+		repo_name TEXT,
+		owner_name TEXT,
 		url TEXT,
 		parent_commit_ids TEXT,
-		commit_date DATETIME
+		commit_date DATETIME,
+		UNIQUE (repo_name, owner_name, sha)
 )
 `
 
@@ -105,6 +112,8 @@ func scanCommitRows(rows *sql.Rows) (*models.Commit, error) {
 		&commit.SHA,
 		&commit.Message,
 		&commit.Author,
+		&commit.RepoName,
+		&commit.OwnerName,
 		&commit.URL,
 		&serializedParentCommitIDs,
 		&dateString,
@@ -134,6 +143,8 @@ func scanCommitRow(row *sql.Row) (*models.Commit, error) {
 		&commit.SHA,
 		&commit.Message,
 		&commit.Author,
+		&commit.RepoName,
+		&commit.OwnerName,
 		&commit.URL,
 		&serializedParentCommitIDs,
 		&dateString,

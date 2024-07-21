@@ -11,9 +11,9 @@ import (
 func main() {
 	ghClient := github.NewClient(nil)
 
-	repo, _, _ := ghClient.Repositories.Get(context.Background(), "brave", "brave-browser")
-
-	prettyJson(repo)
+	//repo, _, _ := ghClient.Repositories.Get(context.Background(), "brave", "brave-browser")
+	//
+	//prettyJson(repo)
 
 	// Page 1: f9bbab669b6f33b228c6bbda8477d643ad58388e and d5dffa29e74bebe402cbf23c2b1c2ecf33e84971
 	commits, _, _ := ghClient.Repositories.ListCommits(context.Background(), "brave", "brave-browser", &github.CommitsListOptions{
@@ -22,7 +22,20 @@ func main() {
 			Page:    1,
 		},
 	})
-	prettyJson(commits)
+
+	for _, commit := range commits {
+		//author := commit.GetCommitter().GetLogin()
+		parents := commit.Parents
+		url := commit.GetHTMLURL()
+		commitURL := commit.GetCommit().GetHTMLURL()
+
+		fmt.Println("html1: ", url)
+		fmt.Println("html2: ", commitURL)
+		for _, parent := range parents {
+			fmt.Println("parent sha: ", parent.GetSHA())
+		}
+	}
+	//prettyJson(commits)
 }
 
 const (
