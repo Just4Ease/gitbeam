@@ -42,19 +42,19 @@ func (l ListCommitFilter) Validate() error {
 }
 
 type Repo struct {
-	Id            int64          `json:"id"`
+	TimeCreated   time.Time      `json:"timeCreated"`
+	TimeUpdated   time.Time      `json:"timeUpdated"`
 	Name          string         `json:"name"`
 	Owner         string         `json:"owner"`
 	Description   string         `json:"description"`
 	URL           string         `json:"url"`
 	Languages     string         `json:"language"`
-	Meta          map[string]any `json:"meta"`
+	Id            int64          `json:"id"`
 	ForkCount     int            `json:"forkCounts"`
 	StarCount     int            `json:"starCounts"`
 	OpenIssues    int            `json:"openIssues"`
 	WatchersCount int            `json:"watchersCount"`
-	TimeCreated   time.Time      `json:"timeCreated"`
-	TimeUpdated   time.Time      `json:"timeUpdated"`
+	Meta          map[string]any `json:"meta"`
 }
 
 func (r Repo) Validate() error {

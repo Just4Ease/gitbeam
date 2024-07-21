@@ -1,6 +1,8 @@
 package models
 
-import validation "github.com/go-ozzo/ozzo-validation"
+import (
+	validation "github.com/go-ozzo/ozzo-validation"
+)
 
 type Result struct {
 	Success bool   `json:"success"`
@@ -11,6 +13,11 @@ type Result struct {
 type OwnerAndRepoName struct {
 	OwnerName string `json:"ownerName"`
 	RepoName  string `json:"repoName"`
+}
+
+type BeamRepoCommitsRequest struct {
+	OwnerAndRepoName `json:",inline"`
+	StartTime        *string `json:"startTime,omitempty"`
 }
 
 func (s OwnerAndRepoName) Validate() error {

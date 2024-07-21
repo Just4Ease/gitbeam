@@ -39,12 +39,14 @@ func (a API) getRepoByOwnerAndRepoName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a API) startBeamingRepoCommits(w http.ResponseWriter, r *http.Request) {
-	var payload models.OwnerAndRepoName
+	var payload models.BeamRepoCommitsRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		a.logger.WithError(err).Error("error decoding payload")
 		utils.WriteHTTPError(w, http.StatusBadRequest, err)
 		return
 	}
+
+	a.logger.WithField("payload", payload).Info("beaming repo commits")
 
 	repo, err := a.service.StartBeamingCommits(r.Context(), payload)
 	if err != nil {

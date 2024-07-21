@@ -8,6 +8,7 @@ import (
 	"gitbeam/models"
 	"gitbeam/repository"
 	"gitbeam/store"
+	"gitbeam/utils"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/google/go-github/v63/github"
 	"github.com/sirupsen/logrus"
@@ -61,7 +62,6 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, ownerName, re
 		return nil, ErrRepositoryNotFound
 	}
 
-	//repo.
 	repo := &models.Repo{
 		Id:            gitRepo.GetID(),
 		Name:          gitRepo.GetName(),
@@ -75,7 +75,13 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, ownerName, re
 		WatchersCount: gitRepo.GetWatchersCount(),
 		TimeCreated:   gitRepo.GetCreatedAt().Time,
 		TimeUpdated:   gitRepo.GetUpdatedAt().Time,
+		Meta:          make(map[string]any),
 	}
+
+	// Take the raw git repo response:, gitRepo -> ([]bytes||string) -> map[string]any
+	// Intentionally ignoring this error message.
+	// Note, this field can be removed totally... It serves no purpose at the moment.
+	_ = utils.UnPack(gitRepo, &repo.Meta)
 
 	return repo, nil
 }
@@ -113,14 +119,18 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, owner *models.O
 
 	repo, err := g.GetByOwnerAndRepoName(ctx, owner.OwnerName, owner.RepoName)
 	if err != nil {
-		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
+		useLogger.WithError(err).Errorln("xxxGetByOwnerAndRepoName")
 		return err
 	}
 
+	pageNumber := 1
+
+repeat:
 	gitCommits, _, err := g.githubClient.Repositories.ListCommits(ctx, repo.Owner, repo.Name, &github.CommitsListOptions{
 		Since: startTimeCursor,
 		Until: time.Now(),
 		ListOptions: github.ListOptions{
+			Page:    pageNumber,
 			PerPage: 100,
 		},
 	})
@@ -146,10 +156,17 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, owner *models.O
 		}
 	}
 
+	// if the previous/above attempt to list commits from github had data, then let's check if a new page will have data,
+	// else we exit until FetchAndSaveCommits is called by a cron.
+	if len(gitCommits) > 0 {
+		pageNumber += 1
+		goto repeat
+	}
+
 	return nil
 }
 
-func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.OwnerAndRepoName) (*models.Repo, error) {
+func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.BeamRepoCommitsRequest) (*models.Repo, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "StartBeamingCommits")
 	repo, err := g.GetByOwnerAndRepoName(ctx, payload.OwnerName, payload.RepoName)
 	if err != nil {
@@ -160,6 +177,16 @@ func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.
 	if err := g.dataStore.StoreRepository(ctx, repo); err != nil {
 		useLogger.WithError(err).Errorln("StoreRepository")
 		return nil, err
+	}
+
+	if payload.StartTime != nil {
+		t, err := time.Parse(time.DateTime, *payload.StartTime)
+		if err != nil {
+			useLogger.WithError(err).Error("time.Parse: invalid start time provided, must confirm to YYYY-MM-DD HH:MM:SS")
+			return nil, err
+		}
+
+		repo.Meta["startTime"] = t // To be consumed by the commit background activity.
 	}
 
 	data, err := json.Marshal(repo)

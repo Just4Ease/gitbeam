@@ -1,10 +1,14 @@
 package events
 
 import (
+	"context"
 	"gitbeam/core"
 	"gitbeam/events/topics"
+	"gitbeam/models"
 	"gitbeam/store"
+	"gitbeam/utils"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 type EventHandlers struct {
@@ -47,13 +51,24 @@ func (e EventHandlers) Listen() {
 func (e EventHandlers) handleRepoCreated() error {
 	return e.eventStore.Subscribe(topics.RepoCreated, func(event store.Event) error {
 		e.logger.Infof("received event on %s", topics.RepoCreated)
-		//var repo models.Repo
-		//if err := utils.UnPack(event.Data(), &repo); err != nil {
-		//	e.logger.WithError(err).Errorf("failed to decode event payload for %s", event.Topic())
-		//}
 
-		// TODO: Implement cron job and
+		var repo models.Repo
+		_ = utils.UnPack(event.Data(), &repo)
+		ctx := context.Background()
 
-		return nil
+		e.logger.WithFields(logrus.Fields{
+			"eventPayload":       event.Data(),
+			"transformedPayload": repo,
+		})
+
+		startTime, ok := repo.Meta["startTime"].(time.Time)
+		if !ok {
+			startTime = repo.TimeCreated // Fall back to when the repo was created as the point of mirroring.
+		}
+
+		return e.service.FetchAndSaveCommits(ctx, &models.OwnerAndRepoName{
+			OwnerName: repo.Owner,
+			RepoName:  repo.Name,
+		}, startTime)
 	})
 }
