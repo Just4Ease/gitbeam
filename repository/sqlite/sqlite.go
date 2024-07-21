@@ -119,7 +119,7 @@ func (s sqliteRepo) ListCommits(ctx context.Context, filter models.ListCommitFil
 		clause = fmt.Sprintf(`%s AND commit_date <= '%s'`, clause, filter.EndTime.Format(time.RFC3339))
 	}
 
-	query := fmt.Sprintf(`%s ORDER BY commit_date DESC LIMIT 1 OFFSET ?`, clause)
+	query := fmt.Sprintf(`%s ORDER BY commit_date DESC LIMIT ? OFFSET ?`, clause)
 
 	rows, err := s.dataStore.QueryContext(ctx, query,
 		filter.OwnerName,
