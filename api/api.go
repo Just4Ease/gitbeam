@@ -18,4 +18,5 @@ func New(service *core.GitBeamService, logger *logrus.Logger) *API {
 func (a API) Routes(router *chi.Mux) {
 	// Mount all route paths here.
 	router.Mount("/repos", a.newReposRoute())
+	router.Mount("/commits", a.newCommitsRoute())
 }

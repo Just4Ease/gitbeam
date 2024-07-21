@@ -70,9 +70,13 @@ func (e EventHandlers) handleRepoCreated() error {
 			"startTime": startTime,
 		}).Infoln("started beaming repository commits with the following payload")
 
-		return e.service.FetchAndSaveCommits(ctx, &models.OwnerAndRepoName{
-			OwnerName: repo.Owner,
-			RepoName:  repo.Name,
-		}, startTime)
+		return e.service.FetchAndSaveCommits(ctx, models.ListCommitFilter{
+			OwnerAndRepoName: models.OwnerAndRepoName{
+				OwnerName: repo.Owner,
+				RepoName:  repo.Name,
+			},
+			StartTime: &startTime,
+			EndTime:   nil,
+		})
 	})
 }

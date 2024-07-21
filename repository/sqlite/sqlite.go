@@ -22,18 +22,6 @@ func (s sqliteRepo) GetRepoByOwner(ctx context.Context, owner *models.OwnerAndRe
 	return scanRepoRow(row)
 }
 
-func (s sqliteRepo) GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error) {
-	clause := `SELECT * from commits WHERE owner_name = ? AND repo_name = ?`
-	if startTime != nil {
-		clause = fmt.Sprintf("%s AND commit_date >= '%s'", clause, startTime.Format(time.RFC3339))
-	}
-
-	query := fmt.Sprintf(`%s ORDER BY commit_date DESC LIMIT 1`, clause)
-	row := s.dataStore.QueryRowContext(ctx,
-		query, owner.OwnerName, owner.RepoName)
-	return scanCommitRow(row)
-}
-
 func (s sqliteRepo) StoreRepository(ctx context.Context, payload *models.Repo) error {
 	insertSQL := `
         INSERT INTO repos (
@@ -104,19 +92,38 @@ func (s sqliteRepo) CountSavedCommits(ctx context.Context, owner models.OwnerAnd
 	return count, nil
 }
 
+func (s sqliteRepo) GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error) {
+	clause := `SELECT * from commits WHERE owner_name = ? AND repo_name = ?`
+	if startTime != nil {
+		clause = fmt.Sprintf("%s AND commit_date >= '%s'", clause, startTime.Format(time.RFC3339))
+	}
+
+	query := fmt.Sprintf(`%s ORDER BY commit_date DESC LIMIT 1`, clause)
+	row := s.dataStore.QueryRowContext(ctx,
+		query, owner.OwnerName, owner.RepoName)
+	return scanCommitRow(row)
+}
+
 func (s sqliteRepo) ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error) {
 
-	if filter.Limit >= 100 || filter.Limit <= 0 {
+	if filter.Limit <= 0 {
 		filter.Limit = 100
 	}
 
-	querySQL := `
-        SELECT * FROM commits WHERE owner_name = ? AND repo_name =  ? 
-        LIMIT ? OFFSET ?`
+	clause := `SELECT * from commits WHERE owner_name = ? AND repo_name = ?`
+	if filter.StartTime != nil {
+		clause = fmt.Sprintf("%s AND commit_date >= '%s'", clause, filter.StartTime.Format(time.RFC3339))
+	}
 
-	rows, err := s.dataStore.QueryContext(ctx, querySQL,
-		filter.Owner.OwnerName,
-		filter.Owner.RepoName,
+	if filter.EndTime != nil {
+		clause = fmt.Sprintf(`%s AND commit_date <= '%s'`, clause, filter.EndTime.Format(time.RFC3339))
+	}
+
+	query := fmt.Sprintf(`%s ORDER BY commit_date DESC LIMIT 1 OFFSET ?`, clause)
+
+	rows, err := s.dataStore.QueryContext(ctx, query,
+		filter.OwnerName,
+		filter.RepoName,
 		filter.Limit,
 		filter.Page,
 	)

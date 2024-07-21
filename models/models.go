@@ -31,17 +31,11 @@ func (commit Commit) Validate() error {
 }
 
 type ListCommitFilter struct {
-	Limit int64            `json:"limit"`
-	Page  int64            `json:"page"`
-	Owner OwnerAndRepoName `json:"owner"`
-}
-
-func (l ListCommitFilter) Validate() error {
-	return validation.ValidateStruct(&l,
-		validation.Field(&l.Owner, validation.Required),
-		validation.Field(&l.Owner.OwnerName, validation.Required),
-		validation.Field(&l.Owner.RepoName, validation.Required),
-	)
+	Limit            int64 `json:"limit" schema:"limit,omitempty"`
+	Page             int64 `json:"page" schema:"page,omitempty"`
+	OwnerAndRepoName `json:",inline" schema:",inline"`
+	StartTime        *time.Time `json:"startTime" schema:"startTime,omitempty"`
+	EndTime          *time.Time `json:"endTime" schema:"endTime,omitempty"`
 }
 
 type Repo struct {

@@ -11,8 +11,8 @@ type Result struct {
 }
 
 type OwnerAndRepoName struct {
-	OwnerName string `json:"ownerName"`
-	RepoName  string `json:"repoName"`
+	OwnerName string `json:"ownerName" schema:"ownerName"`
+	RepoName  string `json:"repoName" schema:"repoName"`
 }
 
 type BeamRepoCommitsRequest struct {
