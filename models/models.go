@@ -6,14 +6,14 @@ import (
 )
 
 type Commit struct {
-	Message        string    `json:"message"`
-	Author         string    `json:"author"`
-	Date           time.Time `json:"date"`
-	URL            string    `json:"url"`
-	Id             string    `json:"id"`
-	RepoId         string    `json:"repoId"`
-	ParentCommitId string    `json:"parentCommitId"`
-	Branch         string    `json:"branch"`
+	Message         string    `json:"message"`
+	Author          string    `json:"author"`
+	Date            time.Time `json:"date"`
+	URL             string    `json:"url"`
+	SHA             string    `json:"id"`
+	RepoId          string    `json:"repoId"`
+	ParentCommitIDs []string  `json:"parentCommitIDs"`
+	Branch          string    `json:"branch"`
 }
 
 func (commit Commit) Validate() error {
@@ -22,9 +22,17 @@ func (commit Commit) Validate() error {
 		validation.Field(&commit.Author, validation.Required),
 		validation.Field(&commit.Date, validation.Required),
 		validation.Field(&commit.RepoId, validation.Required),
-		validation.Field(&commit.Id, validation.Required),
+		validation.Field(&commit.SHA, validation.Required),
 		validation.Field(&commit.RepoId, validation.Required),
+		validation.Field(&commit.Branch, validation.Required),
+		validation.Field(&commit.ParentCommitIDs, validation.Required),
 	)
+}
+
+type ListCommitFilter struct {
+	Limit int64            `json:"limit"`
+	Page  int64            `json:"page"`
+	Owner OwnerAndRepoName `json:"owner"`
 }
 
 type Repo struct {

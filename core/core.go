@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-github/v63/github"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"time"
 )
 
 var (
@@ -108,8 +107,6 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, ownerName, repo
 	}
 
 	gitCommits, _, err := g.githubClient.Repositories.ListCommits(ctx, repo.Owner, repo.Name, &github.CommitsListOptions{
-		Since: time.Time{},
-		Until: time.Time{},
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
@@ -117,12 +114,17 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, ownerName, repo
 
 	for _, gitCommit := range gitCommits {
 		commit := &models.Commit{
-			Message: gitCommit.GetCommit().GetMessage(),
-			Author:  gitCommit.GetCommit().Committer.GetLogin(),
-			Date:    gitCommit.GetCommit().Committer.GetDate().Time,
-			URL:     gitCommit.GetCommit().GetURL(),
-			Id:      gitCommit.GetNodeID(),
-			//RepoId:  gitCommit.R,
+			SHA:             gitCommit.GetSHA(),
+			Message:         gitCommit.GetCommit().GetMessage(),
+			Author:          gitCommit.GetCommit().Committer.GetLogin(),
+			Date:            gitCommit.GetCommit().Committer.GetDate().Time,
+			URL:             gitCommit.GetCommit().GetURL(),
+			ParentCommitIDs: make([]string, 0),
+		}
+
+		parents := gitCommit.GetCommit().Parents
+		for _, parent := range parents {
+			commit.ParentCommitIDs = append(commit.ParentCommitIDs, parent.GetSHA())
 		}
 
 		if err := g.dataStore.SaveCommit(ctx, commit); err != nil {

@@ -3,8 +3,10 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"gitbeam/models"
 	"gitbeam/repository"
+	"time"
 )
 
 // In a real world application, I would use https://entgo.io/ for MySQL/SQLite/Postgresql ( RMDBs ) or mongodb directly.
@@ -54,12 +56,23 @@ func (s sqliteRepo) ListRepos(ctx context.Context) ([]*models.Repo, error) {
 	return repos, nil
 }
 
-func (s sqliteRepo) ListCommits(ctx context.Context) ([]*models.Commit, error) {
-	// Define the SQL query for listing transaction history by source account ID.
-	querySQL := `
-        SELECT * FROM commits` // TODO: Apply commits filters.
+func (s sqliteRepo) ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error) {
 
-	rows, err := s.dataStore.QueryContext(ctx, querySQL)
+	if filter.Limit >= 100 || filter.Limit <= 0 {
+		filter.Limit = 100
+	}
+
+	querySQL := `
+        SELECT * FROM commits WHERE owner_name = ? AND repo_name =  ? 
+        LIMIT ? OFFSET ?`
+
+	rows, err := s.dataStore.QueryContext(ctx, querySQL,
+		filter.Owner.OwnerName,
+		filter.Owner.RepoName,
+		filter.Limit,
+		filter.Page,
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -77,27 +90,29 @@ func (s sqliteRepo) ListCommits(ctx context.Context) ([]*models.Commit, error) {
 	return commits, nil
 }
 
-func (s sqliteRepo) GetCommitById(ctx context.Context, id string) (*models.Commit, error) {
-	row := s.dataStore.QueryRowContext(ctx, "SELECT * from commits WHERE id = ?", id)
+func (s sqliteRepo) GetCommitBySHA(ctx context.Context, sha string) (*models.Commit, error) {
+	row := s.dataStore.QueryRowContext(ctx, "SELECT * from commits WHERE sha = ?", sha)
 	return scanCommitRow(row)
 }
 
 func (s sqliteRepo) SaveCommit(ctx context.Context, commit *models.Commit) error {
 	// TODO: Get duplicate and update or overwrite it with the commit data.
 	// ( this is in the case a commit message was updated via the git append command from it's source )
-	//s.getCommitDuplicateById(ctx, commit.Id)
+	//s.getCommitDuplicateById(ctx, commit.SHA)
 
 	insertSQL := `
         INSERT INTO commits (id, message, author, url, commit_timestamp, parent_commit_id, branch)
         VALUES (?, ?, ?, ?, ?, ?, ?)`
 
+	serializedParentCommitIds, _ := json.Marshal(commit.ParentCommitIDs)
+
 	_, err := s.dataStore.ExecContext(ctx, insertSQL,
-		commit.Id,
+		commit.SHA,
 		commit.Message,
 		commit.Author,
 		commit.URL,
-		commit.Date,
-		commit.ParentCommitId,
+		commit.Date.Format(time.RFC3339),
+		serializedParentCommitIds,
 		commit.Branch,
 	)
 

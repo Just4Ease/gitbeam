@@ -2,7 +2,9 @@ package sqlite
 
 import (
 	"database/sql"
+	"encoding/json"
 	"gitbeam/models"
+	"time"
 )
 
 const repoTableSetup = `
@@ -19,27 +21,40 @@ CREATE TABLE IF NOT EXISTS repos (
 
 const commitsTableSetup = `
 CREATE TABLE IF NOT EXISTS commits (
-    	id INT PRIMARY KEY UNIQUE,
+    	sha TEXT PRIMARY KEY UNIQUE,
 		message FLOAT,
 		author TEXT,
 		url TEXT,
 		commit_timestamp DATETIME,
-		parent_commit_id TEXT,
+		parent_commit_ids TEXT,
 		branch TEXT
 )
 `
 
 func scanCommitRows(rows *sql.Rows) (*models.Commit, error) {
+	var dateString string
+	var serializedParentCommitIDs string
 	var commit models.Commit
-	if err := rows.Scan(
-		&commit.Id,
+	var err error
+	if err = rows.Scan(
+		&commit.SHA,
 		&commit.Message,
 		&commit.Author,
 		&commit.URL,
-		&commit.Date,
-		&commit.ParentCommitId,
+		&dateString,
+		&serializedParentCommitIDs,
 		&commit.Branch,
 	); err != nil {
+		return nil, err
+	}
+
+	commit.Date, err = time.Parse(time.RFC3339, dateString)
+	if err != nil {
+		return nil, err
+	}
+
+	commit.ParentCommitIDs, err = deserializeParentCommitIds(serializedParentCommitIDs)
+	if err != nil {
 		return nil, err
 	}
 
@@ -47,16 +62,29 @@ func scanCommitRows(rows *sql.Rows) (*models.Commit, error) {
 }
 
 func scanCommitRow(row *sql.Row) (*models.Commit, error) {
+	var dateString string
+	var serializedParentCommitIDs string
 	var commit models.Commit
-	if err := row.Scan(
-		&commit.Id,
+	var err error
+	if err = row.Scan(
+		&commit.SHA,
 		&commit.Message,
 		&commit.Author,
 		&commit.URL,
-		&commit.Date,
-		&commit.ParentCommitId,
+		&dateString,
+		&serializedParentCommitIDs,
 		&commit.Branch,
 	); err != nil {
+		return nil, err
+	}
+
+	commit.Date, err = time.Parse(time.RFC3339, dateString)
+	if err != nil {
+		return nil, err
+	}
+
+	commit.ParentCommitIDs, err = deserializeParentCommitIds(serializedParentCommitIDs)
+	if err != nil {
 		return nil, err
 	}
 
@@ -95,4 +123,13 @@ func scanRepoRow(row *sql.Row) (*models.Repo, error) {
 	}
 
 	return &repo, nil
+}
+
+func deserializeParentCommitIds(data string) ([]string, error) {
+	var ids []string
+	err := json.Unmarshal([]byte(data), &ids)
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
