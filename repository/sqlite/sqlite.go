@@ -139,8 +139,15 @@ func (s sqliteRepo) SaveCommit(ctx context.Context, commit *models.Commit) error
 	//s.getCommitDuplicateById(ctx, commit.SHA)
 
 	insertSQL := `
-        INSERT INTO commits (id, message, author, url, commit_timestamp, parent_commit_id, branch)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`
+        INSERT INTO commits (
+            sha,
+			message,
+			author,
+			url,
+			parent_commit_ids,
+			commit_date           
+		)
+        VALUES (?, ?, ?, ?, ?, ?)`
 
 	serializedParentCommitIds, _ := json.Marshal(commit.ParentCommitIDs)
 

@@ -56,15 +56,16 @@ func (e EventHandlers) handleRepoCreated() error {
 		_ = utils.UnPack(event.Data(), &repo)
 		ctx := context.Background()
 
+		startTime, ok := repo.Meta["startTime"].(time.Time)
+		if ok {
+			startTime = repo.TimeCreated // Fall back to when the repo was created as the point of mirroring.
+		}
+
 		e.logger.WithFields(logrus.Fields{
 			"eventPayload":       event.Data(),
 			"transformedPayload": repo,
+			"startTime":          startTime,
 		})
-
-		startTime, ok := repo.Meta["startTime"].(time.Time)
-		if !ok {
-			startTime = repo.TimeCreated // Fall back to when the repo was created as the point of mirroring.
-		}
 
 		return e.service.FetchAndSaveCommits(ctx, &models.OwnerAndRepoName{
 			OwnerName: repo.Owner,
