@@ -6,14 +6,13 @@ import (
 )
 
 type Commit struct {
+	Date            time.Time `json:"date"`
 	Message         string    `json:"message"`
 	Author          string    `json:"author"`
-	Date            time.Time `json:"date"`
 	URL             string    `json:"url"`
 	SHA             string    `json:"id"`
 	RepoId          string    `json:"repoId"`
 	ParentCommitIDs []string  `json:"parentCommitIDs"`
-	Branch          string    `json:"branch"`
 }
 
 func (commit Commit) Validate() error {
@@ -24,7 +23,6 @@ func (commit Commit) Validate() error {
 		validation.Field(&commit.RepoId, validation.Required),
 		validation.Field(&commit.SHA, validation.Required),
 		validation.Field(&commit.RepoId, validation.Required),
-		validation.Field(&commit.Branch, validation.Required),
 		validation.Field(&commit.ParentCommitIDs, validation.Required),
 	)
 }
@@ -35,14 +33,28 @@ type ListCommitFilter struct {
 	Owner OwnerAndRepoName `json:"owner"`
 }
 
+func (l ListCommitFilter) Validate() error {
+	return validation.ValidateStruct(&l,
+		validation.Field(&l.Owner, validation.Required),
+		validation.Field(&l.Owner.OwnerName, validation.Required),
+		validation.Field(&l.Owner.RepoName, validation.Required),
+	)
+}
+
 type Repo struct {
-	Id          int64  `json:"id"`
-	Name        string `json:"name"`
-	Owner       string `json:"owner"`
-	Description string `json:"description"`
-	URL         string `json:"url"`
-	ForkCount   int    `json:"forkCounts"`
-	Language    string `json:"language"`
+	Id            int64          `json:"id"`
+	Name          string         `json:"name"`
+	Owner         string         `json:"owner"`
+	Description   string         `json:"description"`
+	URL           string         `json:"url"`
+	Languages     string         `json:"language"`
+	Meta          map[string]any `json:"meta"`
+	ForkCount     int            `json:"forkCounts"`
+	StarCount     int            `json:"starCounts"`
+	OpenIssues    int            `json:"openIssues"`
+	WatchersCount int            `json:"watchersCount"`
+	TimeCreated   time.Time      `json:"timeCreated"`
+	TimeUpdated   time.Time      `json:"timeUpdated"`
 }
 
 func (r Repo) Validate() error {

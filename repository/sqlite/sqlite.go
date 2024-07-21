@@ -15,19 +15,47 @@ type sqliteRepo struct {
 	dataStore *sql.DB
 }
 
+func (s sqliteRepo) GetLastCommit(ctx context.Context, owner models.OwnerAndRepoName) (*models.Commit, error) {
+	row := s.dataStore.QueryRowContext(ctx,
+		`SELECT * from commits WHERE owner_name = ? AND repo_name = ? 
+                      ORDER BY commit_timestamp DESC LIMIT 1`, owner.OwnerName, owner.RepoName)
+	return scanCommitRow(row)
+}
+
 func (s sqliteRepo) StoreRepository(ctx context.Context, payload *models.Repo) error {
 	insertSQL := `
-        INSERT INTO repos (id, repo_name, owner_name, description, url, fork_count, repo_language)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`
+        INSERT INTO repos (
+			id,
+			repo_name,
+			owner_name,
+			description,
+			url,
+			repo_languages,
+			meta,
+			forks_count,
+			stars_count,
+			watchers_count,
+			open_issues_count,
+			time_created,
+			time_updated
+		)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
+	meta, _ := json.Marshal(payload.Meta)
 	_, err := s.dataStore.ExecContext(ctx, insertSQL,
 		payload.Id,
 		payload.Name,
 		payload.Owner,
 		payload.Description,
 		payload.URL,
+		payload.Languages,
+		string(meta),
 		payload.ForkCount,
-		payload.Language,
+		payload.StarCount,
+		payload.WatchersCount,
+		payload.OpenIssues,
+		payload.TimeCreated.Format(time.RFC3339),
+		payload.TimeUpdated.Format(time.RFC3339),
 	)
 
 	return err
@@ -54,6 +82,16 @@ func (s sqliteRepo) ListRepos(ctx context.Context) ([]*models.Repo, error) {
 	}
 
 	return repos, nil
+}
+
+func (s sqliteRepo) CountSavedCommits(ctx context.Context, owner models.OwnerAndRepoName) (int64, error) {
+	query := `SELECT COUNT(*) FROM commits WHERE owner_name = ? AND repo_name = ?`
+	var count int64
+	err := s.dataStore.QueryRowContext(ctx, query, owner.OwnerName, owner).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (s sqliteRepo) ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error) {
@@ -111,9 +149,8 @@ func (s sqliteRepo) SaveCommit(ctx context.Context, commit *models.Commit) error
 		commit.Message,
 		commit.Author,
 		commit.URL,
-		commit.Date.Format(time.RFC3339),
 		serializedParentCommitIds,
-		commit.Branch,
+		commit.Date.Format(time.RFC3339),
 	)
 
 	return err

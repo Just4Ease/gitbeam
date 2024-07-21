@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-github/v63/github"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 var (
@@ -62,19 +63,24 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, ownerName, re
 
 	//repo.
 	repo := &models.Repo{
-		Id:          gitRepo.GetID(),
-		Name:        gitRepo.GetName(),
-		Owner:       gitRepo.GetOwner().GetLogin(),
-		Description: gitRepo.GetDescription(),
-		URL:         gitRepo.GetHTMLURL(),
-		ForkCount:   gitRepo.GetForksCount(),
-		Language:    gitRepo.GetLanguage(),
+		Id:            gitRepo.GetID(),
+		Name:          gitRepo.GetName(),
+		Owner:         gitRepo.GetOwner().GetLogin(),
+		Description:   gitRepo.GetDescription(),
+		URL:           gitRepo.GetHTMLURL(),
+		Languages:     gitRepo.GetLanguage(),
+		ForkCount:     gitRepo.GetForksCount(),
+		StarCount:     gitRepo.GetStargazersCount(),
+		OpenIssues:    gitRepo.GetOpenIssues(),
+		WatchersCount: gitRepo.GetWatchersCount(),
+		TimeCreated:   gitRepo.GetCreatedAt().Time,
+		TimeUpdated:   gitRepo.GetUpdatedAt().Time,
 	}
 
 	return repo, nil
 }
 
-func (g GitBeamService) ListCommits(ctx context.Context, ownerName, repoName string) ([]*models.Commit, error) {
+func (g GitBeamService) ListCommits(ctx context.Context, filters models.ListCommitFilter) ([]*models.Commit, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "ListCommits")
 
 	var commits []*models.Commit
@@ -82,14 +88,19 @@ func (g GitBeamService) ListCommits(ctx context.Context, ownerName, repoName str
 	hasAttemptedRetry := false
 
 retry:
-	commits, err = g.dataStore.ListCommits(ctx)
+	commits, err = g.dataStore.ListCommits(ctx, filters)
 	if err != nil {
 		useLogger.WithError(err).Errorln("failed to list commits from database")
 		return make([]*models.Commit, 0), nil
 	}
 
 	if len(commits) == 0 && !hasAttemptedRetry {
-		_ = g.FetchAndSaveCommits(ctx, ownerName, repoName)
+		commit, err := g.dataStore.GetLastCommit(ctx, filters.Owner)
+		if err != nil {
+			return make([]*models.Commit, 0), nil
+		}
+
+		_ = g.FetchAndSaveCommits(ctx, &filters.Owner, commit.Date)
 		hasAttemptedRetry = true
 		goto retry
 	}
@@ -97,16 +108,18 @@ retry:
 	return commits, err
 }
 
-func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, ownerName, repoName string) error {
+func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, owner *models.OwnerAndRepoName, startTimeCursor time.Time) error {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetByOwnerAndRepoName")
 
-	repo, err := g.GetByOwnerAndRepoName(ctx, ownerName, repoName)
+	repo, err := g.GetByOwnerAndRepoName(ctx, owner.OwnerName, owner.RepoName)
 	if err != nil {
 		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
 		return err
 	}
 
 	gitCommits, _, err := g.githubClient.Repositories.ListCommits(ctx, repo.Owner, repo.Name, &github.CommitsListOptions{
+		Since: startTimeCursor,
+		Until: time.Now(),
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
