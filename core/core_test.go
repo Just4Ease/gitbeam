@@ -44,7 +44,7 @@ func TestGetRepoByOwnerAndRepoName(t *testing.T) {
 			TestName:      "Valid Owner and Invalid Repo Name",
 			OwnerName:     "Just4Ease",
 			RepoName:      "gitbeamxxxx",
-			ExpectedError: ErrRepositoryNotFound,
+			ExpectedError: ErrGithubRepoNotFound,
 		},
 	}
 
@@ -105,7 +105,7 @@ func TestStartBeamingRepoRepositoryCommits(t *testing.T) {
 			TestName:      "Valid Owner and Invalid Repo Name",
 			OwnerName:     "Just4Ease",
 			RepoName:      "mongoleonnnn",
-			ExpectedError: ErrRepositoryNotFound,
+			ExpectedError: ErrGithubRepoNotFound,
 		},
 	}
 

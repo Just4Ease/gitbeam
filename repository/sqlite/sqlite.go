@@ -15,6 +15,12 @@ type sqliteRepo struct {
 	dataStore *sql.DB
 }
 
+func (s sqliteRepo) GetRepoByOwner(ctx context.Context, owner *models.OwnerAndRepoName) (*models.Repo, error) {
+	row := s.dataStore.QueryRowContext(ctx,
+		`SELECT * from repos WHERE owner_name = ? AND repo_name = ? LIMIT 1`, owner.OwnerName, owner.RepoName)
+	return scanRepoRow(row)
+}
+
 func (s sqliteRepo) GetLastCommit(ctx context.Context, owner models.OwnerAndRepoName) (*models.Commit, error) {
 	row := s.dataStore.QueryRowContext(ctx,
 		`SELECT * from commits WHERE owner_name = ? AND repo_name = ? 

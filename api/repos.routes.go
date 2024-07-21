@@ -22,11 +22,14 @@ func (a API) getRepoByOwnerAndRepoName(w http.ResponseWriter, r *http.Request) {
 	ownerName := r.URL.Query().Get("ownerName")
 	repoName := r.URL.Query().Get("repoName")
 
-	repo, err := a.service.GetByOwnerAndRepoName(r.Context(), ownerName, repoName)
+	repo, err := a.service.GetByOwnerAndRepoName(r.Context(), &models.OwnerAndRepoName{
+		OwnerName: ownerName,
+		RepoName:  repoName,
+	})
 	if err != nil {
 		a.logger.WithError(err).Error("error getting repo by owner/repo")
 		statusNotFound := http.StatusBadRequest
-		if errors.Is(err, core.ErrRepositoryNotFound) {
+		if errors.Is(err, core.ErrGithubRepoNotFound) {
 			statusNotFound = http.StatusNotFound
 		}
 
@@ -52,7 +55,7 @@ func (a API) startBeamingRepoCommits(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.logger.WithError(err).Error("error attempting to beam repository commits.")
 		statusNotFound := http.StatusBadRequest
-		if errors.Is(err, core.ErrRepositoryNotFound) {
+		if errors.Is(err, core.ErrGithubRepoNotFound) {
 			statusNotFound = http.StatusNotFound
 		}
 

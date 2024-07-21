@@ -54,6 +54,7 @@ type Repo struct {
 	StarCount     int            `json:"starCounts"`
 	OpenIssues    int            `json:"openIssues"`
 	WatchersCount int            `json:"watchersCount"`
+	IsSaved       bool           `json:"isSaved"`
 	Meta          map[string]any `json:"meta"`
 }
 

@@ -9,7 +9,6 @@ import (
 	"gitbeam/repository"
 	"gitbeam/store"
 	"gitbeam/utils"
-	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/google/go-github/v63/github"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -17,7 +16,7 @@ import (
 )
 
 var (
-	ErrRepositoryNotFound       = errors.New("dataStore not found")
+	ErrGithubRepoNotFound       = errors.New("github repo not found")
 	ErrOwnerAndRepoNameRequired = errors.New("owner and repo name required")
 )
 
@@ -43,23 +42,24 @@ func NewGitBeamService(
 	}
 }
 
-func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, ownerName, repoName string) (*models.Repo, error) {
+func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models.OwnerAndRepoName) (*models.Repo, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetByOwnerAndRepoName")
 
-	if err := validation.Validate(ownerName, validation.Required); err != nil {
-		useLogger.WithError(err).Error("failed to validate owner name")
+	if err := owner.Validate(); err != nil {
+		useLogger.WithError(err).Error("owner is invalid. please provide a valid ownerName and repoName")
 		return nil, ErrOwnerAndRepoNameRequired
 	}
 
-	if err := validation.Validate(repoName, validation.Required); err != nil {
-		useLogger.WithError(err).Error("failed to validate repo name")
-		return nil, ErrOwnerAndRepoNameRequired
+	existingRepo, err := g.dataStore.GetRepoByOwner(ctx, owner)
+	if err == nil && existingRepo != nil {
+		existingRepo.IsSaved = true
+		return existingRepo, nil
 	}
 
-	gitRepo, _, err := g.githubClient.Repositories.Get(ctx, ownerName, repoName)
+	gitRepo, _, err := g.githubClient.Repositories.Get(ctx, owner.OwnerName, owner.RepoName)
 	if err != nil {
 		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
-		return nil, ErrRepositoryNotFound
+		return nil, ErrGithubRepoNotFound
 	}
 
 	repo := &models.Repo{
@@ -117,7 +117,7 @@ retry:
 func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, owner *models.OwnerAndRepoName, startTimeCursor time.Time) error {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetByOwnerAndRepoName")
 
-	repo, err := g.GetByOwnerAndRepoName(ctx, owner.OwnerName, owner.RepoName)
+	repo, err := g.GetByOwnerAndRepoName(ctx, owner)
 	if err != nil {
 		useLogger.WithError(err).Errorln("xxxGetByOwnerAndRepoName")
 		return err
@@ -126,14 +126,23 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, owner *models.O
 	pageNumber := 1
 
 repeat:
-	gitCommits, _, err := g.githubClient.Repositories.ListCommits(ctx, repo.Owner, repo.Name, &github.CommitsListOptions{
+	gitCommits, raw, err := g.githubClient.Repositories.ListCommits(ctx, repo.Owner, repo.Name, &github.CommitsListOptions{
 		Since: startTimeCursor,
 		Until: time.Now(),
 		ListOptions: github.ListOptions{
 			Page:    pageNumber,
-			PerPage: 100,
+			PerPage: 1000,
 		},
 	})
+
+	if err != nil {
+		useLogger.WithError(err).Error("failed to list commits from github")
+		return err
+	}
+
+	g.logger.WithFields(logrus.Fields{
+		"response": raw,
+	}).Info("Raw API response from GitHub")
 
 	for _, gitCommit := range gitCommits {
 		commit := &models.Commit{
@@ -158,7 +167,7 @@ repeat:
 
 	// if the previous/above attempt to list commits from github had data, then let's check if a new page will have data,
 	// else we exit until FetchAndSaveCommits is called by a cron.
-	if len(gitCommits) > 0 {
+	if len(gitCommits) > 0 && raw.Rate.Remaining > 0 { // TODO: Apply rate limiting rules to respect github's rate limit flow.
 		pageNumber += 1
 		goto repeat
 	}
@@ -168,7 +177,10 @@ repeat:
 
 func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.BeamRepoCommitsRequest) (*models.Repo, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "StartBeamingCommits")
-	repo, err := g.GetByOwnerAndRepoName(ctx, payload.OwnerName, payload.RepoName)
+	repo, err := g.GetByOwnerAndRepoName(ctx, &models.OwnerAndRepoName{
+		OwnerName: payload.OwnerName,
+		RepoName:  payload.RepoName,
+	})
 	if err != nil {
 		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
 		return nil, err

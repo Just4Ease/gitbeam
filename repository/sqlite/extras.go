@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"gitbeam/models"
+	"gitbeam/utils"
 	"time"
 )
 
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS repos (
 
 func scanRepoRow(row *sql.Row) (*models.Repo, error) {
 	var repo models.Repo
+	var meta string
 	if err := row.Scan(
 		&repo.Id,
 		&repo.Name,
@@ -34,7 +36,7 @@ func scanRepoRow(row *sql.Row) (*models.Repo, error) {
 		&repo.Description,
 		&repo.URL,
 		&repo.Languages,
-		&repo.Meta,
+		&meta,
 		&repo.ForkCount,
 		&repo.StarCount,
 		&repo.WatchersCount,
@@ -45,12 +47,13 @@ func scanRepoRow(row *sql.Row) (*models.Repo, error) {
 		return nil, err
 	}
 
+	_ = utils.UnPack(meta, &repo.Meta)
 	return &repo, nil
 }
 
 func scanRepoRows(rows *sql.Rows) (*models.Repo, error) {
-	var meta string
 	var repo models.Repo
+	var meta string
 	if err := rows.Scan(
 		&repo.Id,
 		&repo.Name,
@@ -69,7 +72,7 @@ func scanRepoRows(rows *sql.Rows) (*models.Repo, error) {
 		return nil, err
 	}
 
-	_ = json.Unmarshal([]byte(meta), &repo.Meta)
+	_ = utils.UnPack(meta, &repo.Meta)
 	return &repo, nil
 }
 
