@@ -106,7 +106,7 @@ func (s sqliteRepo) GetLastCommit(ctx context.Context, owner *models.OwnerAndRep
 	return scanCommitRow(row)
 }
 
-func (s sqliteRepo) ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error) {
+func (s sqliteRepo) ListCommits(ctx context.Context, filter models.CommitFilters) ([]*models.Commit, error) {
 
 	if filter.Limit <= 0 {
 		filter.Limit = 100
@@ -198,4 +198,47 @@ func (s sqliteRepo) SaveCommit(ctx context.Context, commit *models.Commit) error
 	}
 
 	return err
+}
+
+func (s sqliteRepo) GetTopCommitAuthors(ctx context.Context, filter models.CommitFilters) ([]*models.TopCommitAuthor, error) {
+	if filter.Limit <= 0 {
+		filter.Limit = 100
+	}
+
+	clause := `SELECT author, COUNT(*) as commit_count FROM commits WHERE owner_name = ? AND repo_name = ?`
+	if filter.FromDate != nil {
+		clause = fmt.Sprintf("%s AND commit_date >= '%s'", clause, filter.FromDate.Format(time.RFC3339))
+	}
+
+	if filter.ToDate != nil {
+		clause = fmt.Sprintf(`%s AND commit_date <= '%s'`, clause, filter.ToDate.Format(time.RFC3339))
+	}
+
+	query := fmt.Sprintf(`%s GROUP BY author ORDER BY commit_count DESC LIMIT ? OFFSET ?`, clause)
+
+	rows, err := s.dataStore.QueryContext(ctx, query,
+		filter.OwnerName,
+		filter.RepoName,
+		filter.Limit,
+		filter.Page,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	var list []*models.TopCommitAuthor
+	defer rows.Close()
+	for rows.Next() {
+		var author models.TopCommitAuthor
+		if err = rows.Scan(
+			&author.Author,
+			&author.CommitCount,
+		); err != nil {
+			return nil, err
+		}
+
+		list = append(list, &author)
+	}
+
+	return list, nil
 }

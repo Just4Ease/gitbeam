@@ -13,9 +13,10 @@ type DataStore interface {
 	GetRepoByOwner(ctx context.Context, owner *models.OwnerAndRepoName) (*models.Repo, error)
 
 	SaveCommit(ctx context.Context, payload *models.Commit) error
-	ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error)
+	ListCommits(ctx context.Context, filter models.CommitFilters) ([]*models.Commit, error)
 	GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error)
 	GetCommitBySHA(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error)
+	GetTopCommitAuthors(ctx context.Context, filter models.CommitFilters) ([]*models.TopCommitAuthor, error)
 }
 
 type CronServiceStore interface {

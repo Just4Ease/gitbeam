@@ -14,6 +14,7 @@ func (a API) newCommitsRoute() chi.Router {
 	router := chi.NewRouter()
 
 	router.Get("/", a.listCommits)
+	router.Get("/top-authors", a.listTopCommitAuthors)
 	router.Get("/{ownerName}/{repoName}/{sha}", a.getCommitBySha)
 	router.Post("/start-mirroring", a.startBeamingRepoCommits)
 	router.Post("/stop-mirroring", a.stopBeamingRepoCommits)
@@ -23,24 +24,37 @@ func (a API) newCommitsRoute() chi.Router {
 
 func (a API) listCommits(w http.ResponseWriter, r *http.Request) {
 	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "listCommits").Logger
-	//owner := models.OwnerAndRepoName{
-	//	OwnerName: chi.URLParam(r, "ownerName"),
-	//	RepoName:  chi.URLParam(r, "repoName"),
-	//}
-
 	decoder := schema.NewDecoder()
-	var filter models.ListCommitFilter
+	var filter models.CommitFilters
 	if err := decoder.Decode(&filter, r.URL.Query()); err != nil {
-		useLogger.WithError(err).Error("failed to decode request payload")
+		useLogger.WithError(err).Error("failed to decode query params into filters.")
 		utils.WriteHTTPError(w, http.StatusBadRequest, errors.New("Bad/Invalid Query Parameters"))
 		return
 	}
 
-	//filter.Owner = owner
-
-	a.logger.WithField("filter", filter).Info("ListCommits Filters")
-
+	useLogger.WithField("filter", filter).Info("filters")
 	list, err := a.service.ListCommits(r.Context(), filter)
+	if err != nil {
+		utils.WriteHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	utils.WriteHTTPSuccess(w, "Success", list)
+}
+
+func (a API) listTopCommitAuthors(w http.ResponseWriter, r *http.Request) {
+	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "listTopCommitAuthors").Logger
+	decoder := schema.NewDecoder()
+	var filter models.CommitFilters
+	if err := decoder.Decode(&filter, r.URL.Query()); err != nil {
+		useLogger.WithError(err).Error("failed to decode query params into filters.")
+		utils.WriteHTTPError(w, http.StatusBadRequest, errors.New("Bad/Invalid Query Parameters"))
+		return
+	}
+
+	useLogger.WithField("filter", filter).Info("filters")
+
+	list, err := a.service.GetTopCommitAuthors(r.Context(), filter)
 	if err != nil {
 		utils.WriteHTTPError(w, http.StatusBadRequest, err)
 		return

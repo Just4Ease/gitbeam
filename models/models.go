@@ -1,8 +1,6 @@
 package models
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
 	"time"
 )
 
@@ -17,23 +15,10 @@ type Commit struct {
 	ParentCommitIDs []string  `json:"parentCommitIDs"`
 }
 
-func (commit Commit) Validate() error {
-	return validation.ValidateStruct(&commit,
-		validation.Field(&commit.SHA, validation.Required, is.Hexadecimal),
-		validation.Field(&commit.Message, validation.Required),
-		validation.Field(&commit.Author, validation.Required),
-		validation.Field(&commit.URL, validation.Required, is.URL),
-		validation.Field(&commit.OwnerName, validation.Required),
-		validation.Field(&commit.RepoName, validation.Required),
-		validation.Field(&commit.Date, validation.Required),
-		validation.Field(&commit.ParentCommitIDs, validation.Required),
-	)
-}
-
-type ListCommitFilter struct {
+type CommitFilters struct {
+	OwnerAndRepoName `json:",inline" schema:",inline"`
 	Limit            int64 `json:"limit" schema:"limit,omitempty"`
 	Page             int64 `json:"page" schema:"page,omitempty"`
-	OwnerAndRepoName `json:",inline" schema:",inline"`
 	FromDate         *Date `json:"fromDate" schema:"fromDate,omitempty"`
 	ToDate           *Date `json:"toDate" schema:"toDate,omitempty"`
 }
@@ -54,9 +39,7 @@ type Repo struct {
 	Meta          map[string]any `json:"meta"`
 }
 
-func (r Repo) Validate() error {
-	return validation.ValidateStruct(&r,
-		validation.Field(&r.Name, validation.Required),
-		validation.Field(&r.URL, validation.Required),
-	)
+type TopCommitAuthor struct {
+	Author      string `json:"author"`
+	CommitCount int    `json:"commitCount"`
 }

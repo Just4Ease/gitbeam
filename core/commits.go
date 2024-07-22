@@ -11,7 +11,7 @@ var (
 	ErrCommitNotFound = errors.New("commit not found")
 )
 
-func (g GitBeamService) ListCommits(ctx context.Context, filters models.ListCommitFilter) ([]*models.Commit, error) {
+func (g GitBeamService) ListCommits(ctx context.Context, filters models.CommitFilters) ([]*models.Commit, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "ListCommits")
 
 	var commits []*models.Commit
@@ -34,6 +34,18 @@ retry:
 	return commits, err
 }
 
+func (g GitBeamService) GetTopCommitAuthors(ctx context.Context, filters models.CommitFilters) ([]*models.TopCommitAuthor, error) {
+	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetTopCommitAuthors")
+
+	list, err := g.dataStore.GetTopCommitAuthors(ctx, filters)
+	if err != nil {
+		useLogger.WithError(err).Errorln("failed to list top commit author from database")
+		return make([]*models.TopCommitAuthor, 0), nil
+	}
+
+	return list, nil
+}
+
 func (g GitBeamService) GetCommitsBySha(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetCommitsBySha")
 	commit, err := g.dataStore.GetCommitBySHA(ctx, owner, sha)
@@ -45,7 +57,7 @@ func (g GitBeamService) GetCommitsBySha(ctx context.Context, owner models.OwnerA
 	return commit, nil
 }
 
-func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, filters models.ListCommitFilter) error {
+func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, filters models.CommitFilters) error {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "FetchAndSaveCommits")
 	pageNumber := 1
 

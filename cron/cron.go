@@ -56,7 +56,7 @@ func (s Service) executeEntriesInCronTracker() {
 		wg.Add(1)
 		go func(name models.OwnerAndRepoName) {
 			defer wg.Done()
-			_ = s.service.FetchAndSaveCommits(ctx, models.ListCommitFilter{
+			_ = s.service.FetchAndSaveCommits(ctx, models.CommitFilters{
 				OwnerAndRepoName: name,
 			})
 		}(models.OwnerAndRepoName{

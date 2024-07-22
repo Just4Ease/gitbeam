@@ -111,7 +111,7 @@ func (mr *MockDataStoreMockRecorder) GetRepoByOwner(ctx, owner interface{}) *gom
 }
 
 // ListCommits mocks base method.
-func (m *MockDataStore) ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error) {
+func (m *MockDataStore) ListCommits(ctx context.Context, filter models.CommitFilters) ([]*models.Commit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListCommits", ctx, filter)
 	ret0, _ := ret[0].([]*models.Commit)
