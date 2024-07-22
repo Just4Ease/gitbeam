@@ -56,18 +56,29 @@ func (e EventHandlers) handleRepoCreated() error {
 		_ = utils.UnPack(event.Data(), &repo)
 		ctx := context.Background()
 
-		startTimeString, ok := repo.Meta["startTime"].(string)
-		var startTime time.Time
+		startTimeString, ok := repo.Meta["fromDate"].(string)
+		var fromDate models.Date
 		if ok {
-			tt, _ := time.Parse(time.RFC3339, startTimeString)
-			startTime = tt // Fall back to when the repo was created as the point of mirroring.
+			ct, _ := models.Parse(startTimeString)
+			//tt, _ := models.Date.(time.RFC3339, startTimeString)
+			fromDate = *ct // Fall back to when the repo was created as the point of mirroring.
 		} else {
-			startTime = repo.TimeCreated
+			ct, _ := models.Parse(repo.TimeCreated.Format(time.DateTime))
+			fromDate = *ct
+		}
+
+		toDateString, ok := repo.Meta["toDate"].(string)
+		var toDate *models.Date
+		if ok {
+			ct, _ := models.Parse(toDateString)
+			toDate = ct
+		} else {
+			toDate = nil
 		}
 
 		e.logger.WithFields(logrus.Fields{
-			"repo":      repo,
-			"startTime": startTime,
+			"repo":     repo,
+			"fromDate": fromDate,
 		}).Infoln("started beaming repository commits with the following payload")
 
 		return e.service.FetchAndSaveCommits(ctx, models.ListCommitFilter{
@@ -75,8 +86,8 @@ func (e EventHandlers) handleRepoCreated() error {
 				OwnerName: repo.Owner,
 				RepoName:  repo.Name,
 			},
-			StartTime: &startTime,
-			EndTime:   nil,
+			FromDate: &fromDate,
+			ToDate:   toDate,
 		})
 	})
 }

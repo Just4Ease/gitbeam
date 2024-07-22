@@ -34,8 +34,8 @@ type ListCommitFilter struct {
 	Limit            int64 `json:"limit" schema:"limit,omitempty"`
 	Page             int64 `json:"page" schema:"page,omitempty"`
 	OwnerAndRepoName `json:",inline" schema:",inline"`
-	StartTime        *time.Time `json:"startTime" schema:"startTime,omitempty"`
-	EndTime          *time.Time `json:"endTime" schema:"endTime,omitempty"`
+	FromDate         *Date `json:"fromDate" schema:"fromDate,omitempty"`
+	ToDate           *Date `json:"toDate" schema:"toDate,omitempty"`
 }
 
 type Repo struct {

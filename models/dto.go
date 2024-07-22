@@ -17,7 +17,8 @@ type OwnerAndRepoName struct {
 
 type BeamRepoCommitsRequest struct {
 	OwnerAndRepoName `json:",inline"`
-	StartTime        *string `json:"startTime,omitempty"`
+	FromDate         *Date `json:"fromDate,omitempty"`
+	ToDate           *Date `json:"toDate,omitempty"`
 }
 
 func (s OwnerAndRepoName) Validate() error {

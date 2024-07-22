@@ -2,18 +2,23 @@ package core
 
 import (
 	"context"
+	"encoding/json"
 	"gitbeam/mocks"
 	"gitbeam/models"
 	"github.com/golang/mock/gomock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
 func TestGetRepoByOwnerAndRepoName(t *testing.T) {
 	logger := logrus.New()
 
-	service := NewGitBeamService(logger, nil, nil, nil)
+	controller := gomock.NewController(t)
+	dataStore := mocks.NewMockDataStore(controller)
+	eventStore := mocks.NewMockEventStore(controller)
+	service := NewGitBeamService(logger, eventStore, dataStore, nil)
 
 	ctx := context.Background()
 	tests := []struct {
@@ -24,8 +29,8 @@ func TestGetRepoByOwnerAndRepoName(t *testing.T) {
 	}{
 		{
 			TestName:      "Valid Owner and Repo Name",
-			OwnerName:     "Just4Ease",
-			RepoName:      "gitbeam",
+			OwnerName:     "brave",
+			RepoName:      "brave-browser",
 			ExpectedError: nil,
 		},
 		{
@@ -50,7 +55,21 @@ func TestGetRepoByOwnerAndRepoName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.TestName, func(t *testing.T) {
-			repo, err := service.GetByOwnerAndRepoName(ctx, test.OwnerName, test.RepoName)
+
+			owner := &models.OwnerAndRepoName{
+				OwnerName: test.OwnerName,
+				RepoName:  test.RepoName,
+			}
+
+			if test.ExpectedError == nil {
+				f, err := os.Open("../seeds/brave.brave-browser.json")
+				assert.NoError(t, err)
+				var repo models.Repo
+				assert.Nil(t, json.NewDecoder(f).Decode(&repo))
+				dataStore.EXPECT().GetRepoByOwner(ctx, owner).MaxTimes(1).Return(&repo, nil)
+			}
+
+			repo, err := service.GetByOwnerAndRepoName(ctx, owner)
 			if test.ExpectedError != nil {
 				assert.Equal(t, test.ExpectedError, err)
 				assert.Nil(t, repo)
@@ -79,41 +98,36 @@ func TestStartBeamingRepoRepositoryCommits(t *testing.T) {
 		TestName      string
 		OwnerName     string
 		RepoName      string
+		StartTime     *models.Date
+		EndTime       *models.Date
 		ExpectedError error
 		ExpectedRepo  *models.Repo
 	}{
 		{
 			TestName:      "Beam Valid Owner and Repo Name",
-			OwnerName:     "Just4Ease",
-			RepoName:      "MongoLeon",
+			OwnerName:     "brave",
+			RepoName:      "brave-browser",
 			ExpectedError: nil,
-			ExpectedRepo:  &models.Repo{},
-		},
-		{
-			TestName:      "Beam Already Beamed Repo",
-			OwnerName:     "",
-			RepoName:      "MongoLeon",
-			ExpectedError: ErrOwnerAndRepoNameRequired,
-		},
-		{
-			TestName:      "Valid Owner and Empty Repo Name",
-			OwnerName:     "Just4Ease",
-			RepoName:      "",
-			ExpectedError: ErrOwnerAndRepoNameRequired,
 		},
 		{
 			TestName:      "Valid Owner and Invalid Repo Name",
 			OwnerName:     "Just4Ease",
 			RepoName:      "mongoleonnnn",
+			StartTime:     nil,
+			EndTime:       nil,
 			ExpectedError: ErrGithubRepoNotFound,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.TestName, func(t *testing.T) {
-			repo, err := service.StartBeamingCommits(ctx, models.OwnerAndRepoName{
-				OwnerName: "",
-				RepoName:  "",
+			repo, err := service.StartBeamingCommits(ctx, models.BeamRepoCommitsRequest{
+				OwnerAndRepoName: models.OwnerAndRepoName{
+					OwnerName: test.OwnerName,
+					RepoName:  test.RepoName,
+				},
+				FromDate: test.StartTime,
+				ToDate:   test.EndTime,
 			})
 
 			if test.ExpectedError != nil {

@@ -8,6 +8,7 @@ import (
 	context "context"
 	models "gitbeam/models"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -35,34 +36,93 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// GetCommitById mocks base method.
-func (m *MockDataStore) GetCommitById(ctx context.Context, id string) (*models.Commit, error) {
+// DeleteCronTracker mocks base method.
+func (m *MockDataStore) DeleteCronTracker(ctx context.Context, owner models.OwnerAndRepoName) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommitBySHA", ctx, id)
+	ret := m.ctrl.Call(m, "DeleteCronTracker", ctx, owner)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCronTracker indicates an expected call of DeleteCronTracker.
+func (mr *MockDataStoreMockRecorder) DeleteCronTracker(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCronTracker", reflect.TypeOf((*MockDataStore)(nil).DeleteCronTracker), ctx, owner)
+}
+
+// GetCommitBySHA mocks base method.
+func (m *MockDataStore) GetCommitBySHA(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommitBySHA", ctx, owner, sha)
 	ret0, _ := ret[0].(*models.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCommitById indicates an expected call of GetCommitById.
-func (mr *MockDataStoreMockRecorder) GetCommitById(ctx, id interface{}) *gomock.Call {
+// GetCommitBySHA indicates an expected call of GetCommitBySHA.
+func (mr *MockDataStoreMockRecorder) GetCommitBySHA(ctx, owner, sha interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitBySHA", reflect.TypeOf((*MockDataStore)(nil).GetCommitById), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitBySHA", reflect.TypeOf((*MockDataStore)(nil).GetCommitBySHA), ctx, owner, sha)
+}
+
+// GetCronTracker mocks base method.
+func (m *MockDataStore) GetCronTracker(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTracker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCronTracker", ctx, owner)
+	ret0, _ := ret[0].(*models.CronTracker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCronTracker indicates an expected call of GetCronTracker.
+func (mr *MockDataStoreMockRecorder) GetCronTracker(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCronTracker", reflect.TypeOf((*MockDataStore)(nil).GetCronTracker), ctx, owner)
+}
+
+// GetLastCommit mocks base method.
+func (m *MockDataStore) GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastCommit", ctx, owner, startTime)
+	ret0, _ := ret[0].(*models.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastCommit indicates an expected call of GetLastCommit.
+func (mr *MockDataStoreMockRecorder) GetLastCommit(ctx, owner, startTime interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastCommit", reflect.TypeOf((*MockDataStore)(nil).GetLastCommit), ctx, owner, startTime)
+}
+
+// GetRepoByOwner mocks base method.
+func (m *MockDataStore) GetRepoByOwner(ctx context.Context, owner *models.OwnerAndRepoName) (*models.Repo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepoByOwner", ctx, owner)
+	ret0, _ := ret[0].(*models.Repo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepoByOwner indicates an expected call of GetRepoByOwner.
+func (mr *MockDataStoreMockRecorder) GetRepoByOwner(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoByOwner", reflect.TypeOf((*MockDataStore)(nil).GetRepoByOwner), ctx, owner)
 }
 
 // ListCommits mocks base method.
-func (m *MockDataStore) ListCommits(ctx context.Context) ([]*models.Commit, error) {
+func (m *MockDataStore) ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListCommits", ctx)
+	ret := m.ctrl.Call(m, "ListCommits", ctx, filter)
 	ret0, _ := ret[0].([]*models.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListCommits indicates an expected call of ListCommits.
-func (mr *MockDataStoreMockRecorder) ListCommits(ctx interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) ListCommits(ctx, filter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCommits", reflect.TypeOf((*MockDataStore)(nil).ListCommits), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCommits", reflect.TypeOf((*MockDataStore)(nil).ListCommits), ctx, filter)
 }
 
 // ListRepos mocks base method.
@@ -92,6 +152,20 @@ func (m *MockDataStore) SaveCommit(ctx context.Context, payload *models.Commit) 
 func (mr *MockDataStoreMockRecorder) SaveCommit(ctx, payload interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommit", reflect.TypeOf((*MockDataStore)(nil).SaveCommit), ctx, payload)
+}
+
+// SaveCronTracker mocks base method.
+func (m *MockDataStore) SaveCronTracker(ctx context.Context, tracker models.CronTracker) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveCronTracker", ctx, tracker)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveCronTracker indicates an expected call of SaveCronTracker.
+func (mr *MockDataStoreMockRecorder) SaveCronTracker(ctx, tracker interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCronTracker", reflect.TypeOf((*MockDataStore)(nil).SaveCronTracker), ctx, tracker)
 }
 
 // StoreRepository mocks base method.

@@ -1,0 +1,15 @@
+{
+  "timeCreated": "2017-11-09T23:44:38Z",
+  "timeUpdated": "2024-07-21T10:07:51Z",
+  "name": "brave-browser",
+  "owner": "brave",
+  "description": "Brave browser for Android, iOS, Linux, macOS, Windows.",
+  "url": "https://github.com/brave/brave-browser",
+  "language": "JavaScript",
+  "forkCounts": 2228,
+  "starCounts": 17062,
+  "openIssues": 7509,
+  "watchersCount": 17062,
+  "isSaved": true,
+  "meta": {}
+}

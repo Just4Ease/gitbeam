@@ -2,7 +2,9 @@ package core
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"gitbeam/events/topics"
 	"gitbeam/models"
 	"gitbeam/repository"
 	"gitbeam/store"
@@ -72,12 +74,30 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models
 		TimeCreated:   gitRepo.GetCreatedAt().Time,
 		TimeUpdated:   gitRepo.GetUpdatedAt().Time,
 		Meta:          make(map[string]any),
+		IsSaved:       false,
 	}
 
 	// Take the raw git repo response:, gitRepo -> ([]bytes||string) -> map[string]any
 	// Intentionally ignoring this error message.
 	// Note, this field can be removed totally... It serves no purpose at the moment.
 	_ = utils.UnPack(gitRepo, &repo.Meta)
+	if repo.Meta == nil {
+		repo.Meta = make(map[string]any)
+	}
+
+	if err := g.dataStore.StoreRepository(ctx, repo); err != nil {
+		useLogger.WithError(err).Errorln("Failed to persist repository")
+		return nil, err
+	}
+
+	data, err := json.Marshal(repo)
+	if err != nil {
+		useLogger.WithError(err).Errorln("json.Marshal: failed to marshal repo before publishing to event store.")
+		return nil, err
+	}
+
+	// This is a channel-based event store, so checking of errors aren't needed here.
+	_ = g.eventStore.Publish(topics.RepoCreated, data)
 
 	return repo, nil
 }
