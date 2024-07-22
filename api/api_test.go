@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"gitbeam/core"
 	"gitbeam/events"
@@ -23,7 +22,7 @@ func TestListCommits(t *testing.T) {
 	logger := logrus.New()
 	service := setupService(logger)
 	router := chi.NewMux()
-	New(service, logger).Routes(router)
+	New(service, nil, logger).Routes(router)
 
 	req, err := http.NewRequest(http.MethodGet, "/commits?ownerName=brave&repoName=brave-browser", nil)
 	assert.Nil(t, err)
@@ -36,7 +35,7 @@ func TestGetRepo(t *testing.T) {
 	logger := logrus.New()
 	service := setupService(logger)
 	router := chi.NewMux()
-	New(service, logger).Routes(router)
+	New(service, nil, logger).Routes(router)
 
 	req, err := http.NewRequest(http.MethodGet, "/repos/brave/brave-browser", nil)
 	assert.Nil(t, err)
@@ -50,7 +49,6 @@ func TestGetRepo(t *testing.T) {
 }
 
 func setupService(logger *logrus.Logger) *core.GitBeamService {
-	var db *sql.DB
 	var eventStore store.EventStore
 	var dataStore repository.DataStore
 	var err error
@@ -58,13 +56,9 @@ func setupService(logger *logrus.Logger) *core.GitBeamService {
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(logrus.InfoLevel)
 
-	if db, err = sql.Open("sqlite3", "test_data.db"); err != nil {
-		logger.WithError(err).Fatal("failed to open database")
-	}
-
 	//Using SQLite as the mini persistent storage.
 	//( in a real world system, this would be any production level or vendor managed db )
-	if dataStore, err = sqlite.NewSqliteRepo(db); err != nil {
+	if dataStore, err = sqlite.NewSqliteRepo("test_data.db"); err != nil {
 		logger.WithError(err).Fatal("failed to initialize sqlite database repository")
 	}
 

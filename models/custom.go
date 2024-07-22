@@ -11,7 +11,7 @@ type Date struct {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (ct *Date) MarshalJSON() ([]byte, error) {
-	return json.Marshal(ct.Format(time.DateTime))
+	return json.Marshal(ct.Format(time.DateOnly))
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -20,7 +20,7 @@ func (ct *Date) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &str); err != nil {
 		return err
 	}
-	t, err := time.Parse(time.DateTime, str)
+	t, err := time.Parse(time.DateOnly, str)
 	if err != nil {
 		return err
 	}

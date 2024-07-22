@@ -121,7 +121,7 @@ func TestStartBeamingRepoRepositoryCommits(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.TestName, func(t *testing.T) {
-			repo, err := service.StartBeamingCommits(ctx, models.BeamRepoCommitsRequest{
+			repo, err := service.StartBeamingCommits(ctx, models.MirrorRepoCommitsRequest{
 				OwnerAndRepoName: models.OwnerAndRepoName{
 					OwnerName: test.OwnerName,
 					RepoName:  test.RepoName,

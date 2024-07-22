@@ -20,8 +20,8 @@ type DataStore interface {
 }
 
 type CronServiceStore interface {
-	SaveCronTracker(ctx context.Context, tracker models.CronTracker) error
-	GetCronTracker(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTracker, error)
-	DeleteCronTracker(ctx context.Context, owner models.OwnerAndRepoName) error
-	ListCronTrackers(ctx context.Context) ([]*models.CronTracker, error)
+	SaveCronTask(ctx context.Context, task models.CronTask) error
+	GetCronTask(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTask, error)
+	DeleteCronTask(ctx context.Context, owner models.OwnerAndRepoName) error
+	ListCronTask(ctx context.Context) ([]*models.CronTask, error)
 }

@@ -30,6 +30,7 @@ func main() {
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(logrus.InfoLevel)
+	router := chi.NewRouter()
 
 	//Using SQLite as the mini persistent storage.
 	//( in a real world system, this would be any production level or vendor managed db )
@@ -43,21 +44,21 @@ func main() {
 
 	// If the dependencies were more than 3, I would use a variadic function to inject them.
 	//Clarity is better here for this exercise.
-	service := core.NewGitBeamService(logger, eventStore, dataStore, nil)
+	coreService := core.NewGitBeamService(logger, eventStore, dataStore, nil)
 
 	// To handle event-based background activities. ( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
-	go events.NewEventHandler(eventStore, logger, service).Listen()
+	go events.NewEventHandler(eventStore, logger, coreService).Listen()
 
 	//Using SQLite as the mini persistent storage.
 	//( in a real world system, this would be any production level or vendor managed db )
 	if cronStore, err = sqlite.NewSqliteCronStore("cron_store.db"); err != nil {
 		logger.WithError(err).Fatal("failed to initialize sqlite database repository for cron store.")
 	}
-	
-	go cron.NewCronService(cronStore, service, logger).Start()
 
-	router := chi.NewRouter()
-	api.New(service, logger).Routes(router)
+	cronService := cron.NewCronService(cronStore, coreService, logger)
+	go cronService.Start()
+
+	api.New(coreService, cronService, logger).Routes(router)
 
 	startAndManageHTTPServer(router, logger)
 }

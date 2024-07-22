@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"gitbeam/core"
 	"gitbeam/models"
@@ -16,8 +17,8 @@ func (a API) newCommitsRoute() chi.Router {
 	router.Get("/", a.listCommits)
 	router.Get("/top-authors", a.listTopCommitAuthors)
 	router.Get("/{ownerName}/{repoName}/{sha}", a.getCommitBySha)
-	router.Post("/start-mirroring", a.startBeamingRepoCommits)
-	router.Post("/stop-mirroring", a.stopBeamingRepoCommits)
+	router.Post("/start-mirroring", a.startMirroringRepoCommits)
+	router.Post("/stop-mirroring", a.stopMirroringRepoCommits)
 
 	return router
 }
@@ -33,7 +34,7 @@ func (a API) listCommits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	useLogger.WithField("filter", filter).Info("filters")
-	list, err := a.service.ListCommits(r.Context(), filter)
+	list, err := a.coreService.ListCommits(r.Context(), filter)
 	if err != nil {
 		utils.WriteHTTPError(w, http.StatusBadRequest, err)
 		return
@@ -54,7 +55,7 @@ func (a API) listTopCommitAuthors(w http.ResponseWriter, r *http.Request) {
 
 	useLogger.WithField("filter", filter).Info("filters")
 
-	list, err := a.service.GetTopCommitAuthors(r.Context(), filter)
+	list, err := a.coreService.GetTopCommitAuthors(r.Context(), filter)
 	if err != nil {
 		utils.WriteHTTPError(w, http.StatusBadRequest, err)
 		return
@@ -71,7 +72,7 @@ func (a API) getCommitBySha(w http.ResponseWriter, r *http.Request) {
 
 	sha := chi.URLParam(r, "sha")
 
-	commit, err := a.service.GetCommitsBySha(r.Context(), owner, sha)
+	commit, err := a.coreService.GetCommitsBySha(r.Context(), owner, sha)
 	if err != nil {
 		statusNotFound := http.StatusBadRequest
 
@@ -85,4 +86,47 @@ func (a API) getCommitBySha(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteHTTPSuccess(w, "Successfully retrieved commit", commit)
+}
+
+func (a API) startMirroringRepoCommits(w http.ResponseWriter, r *http.Request) {
+	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "startMirroringRepoCommits").Logger
+	var payload models.MirrorRepoCommitsRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		useLogger.WithError(err).Error("error decoding payload into mirroring repo commits struct.")
+		utils.WriteHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	repo, err := a.cronService.StartMirroringRepoCommits(r.Context(), payload)
+	if err != nil {
+		statusCode := http.StatusBadRequest
+		if errors.Is(err, core.ErrGithubRepoNotFound) {
+			statusCode = http.StatusNotFound
+		}
+
+		utils.WriteHTTPError(w, statusCode, err)
+		return
+	}
+
+	utils.WriteHTTPSuccess(w, "Successfully started mirroring/beaming repo commits.", repo)
+}
+
+func (a API) stopMirroringRepoCommits(w http.ResponseWriter, r *http.Request) {
+	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "stopMirroringRepoCommits").Logger
+	var payload models.OwnerAndRepoName
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		useLogger.WithError(err).Error("error decoding payload")
+		utils.WriteHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	err := a.cronService.StopMirroringRepoCommits(r.Context(), payload)
+	if err != nil {
+		useLogger.WithError(err).Error("failed to remove cron task")
+		statusCode := http.StatusBadRequest
+		utils.WriteHTTPError(w, statusCode, err)
+		return
+	}
+
+	utils.WriteHTTPSuccess(w, "Successfully stopped mirroring/beaming repo commits.", nil)
 }

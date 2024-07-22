@@ -35,6 +35,7 @@ func (e EventHandlers) Listen() {
 	e.subscriptions = append(
 		e.subscriptions,
 		e.handleRepoCreated,
+		e.handleCronTaskCreated,
 	)
 
 	for _, sub := range e.subscriptions {
@@ -56,37 +57,50 @@ func (e EventHandlers) handleRepoCreated() error {
 		_ = utils.UnPack(event.Data(), &repo)
 		ctx := context.Background()
 
-		startTimeString, ok := repo.Meta["fromDate"].(string)
-		var fromDate models.Date
-		if ok {
-			ct, _ := models.Parse(startTimeString)
-			//tt, _ := models.Date.(time.RFC3339, startTimeString)
-			fromDate = *ct // Fall back to when the repo was created as the point of mirroring.
-		} else {
-			ct, _ := models.Parse(repo.TimeCreated.Format(time.DateTime))
-			fromDate = *ct
-		}
-
-		toDateString, ok := repo.Meta["toDate"].(string)
-		var toDate *models.Date
-		if ok {
-			ct, _ := models.Parse(toDateString)
-			toDate = ct
-		} else {
-			toDate = nil
-		}
-
-		e.logger.WithFields(logrus.Fields{
-			"repo":     repo,
-			"fromDate": fromDate,
-		}).Infoln("started beaming repository commits with the following payload")
+		fromDate, _ := models.Parse(repo.TimeCreated.Format(time.DateTime))
+		toDate, _ := models.Parse(time.Now().Format(time.DateOnly))
 
 		return e.service.FetchAndSaveCommits(ctx, models.CommitFilters{
 			OwnerAndRepoName: models.OwnerAndRepoName{
 				OwnerName: repo.Owner,
 				RepoName:  repo.Name,
 			},
-			FromDate: &fromDate,
+			FromDate: fromDate,
+			ToDate:   toDate,
+		})
+	})
+}
+
+func (e EventHandlers) handleCronTaskCreated() error {
+	return e.eventStore.Subscribe(topics.CronTaskCreated, func(event store.Event) error {
+		e.logger.Infof("received event on %s", topics.CronTaskCreated)
+
+		var repo models.Repo
+		_ = utils.UnPack(event.Data(), &repo)
+		ctx := context.Background()
+
+		startTimeString, ok := repo.Meta["fromDate"].(string)
+		var fromDate *models.Date
+		if ok {
+			fromDate, _ = models.Parse(startTimeString)
+		} else {
+			fromDate, _ = models.Parse(repo.TimeCreated.Format(time.DateOnly))
+		}
+
+		var toDate *models.Date
+		toDateString, ok := repo.Meta["toDate"].(string)
+		if ok {
+			toDate, _ = models.Parse(toDateString)
+		} else {
+			toDate = nil
+		}
+
+		return e.service.FetchAndSaveCommits(ctx, models.CommitFilters{
+			OwnerAndRepoName: models.OwnerAndRepoName{
+				OwnerName: repo.Owner,
+				RepoName:  repo.Name,
+			},
+			FromDate: fromDate,
 			ToDate:   toDate,
 		})
 	})

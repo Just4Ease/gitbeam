@@ -15,7 +15,7 @@ type OwnerAndRepoName struct {
 	RepoName  string `json:"repoName" schema:"repoName"`
 }
 
-type BeamRepoCommitsRequest struct {
+type MirrorRepoCommitsRequest struct {
 	OwnerAndRepoName `json:",inline"`
 	FromDate         *Date `json:"fromDate,omitempty"`
 	ToDate           *Date `json:"toDate,omitempty"`

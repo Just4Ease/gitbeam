@@ -2,17 +2,23 @@ package api
 
 import (
 	"gitbeam/core"
+	"gitbeam/cron"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 )
 
 type API struct {
-	service *core.GitBeamService
-	logger  *logrus.Logger
+	coreService *core.GitBeamService
+	cronService *cron.Service
+	logger      *logrus.Logger
 }
 
-func New(service *core.GitBeamService, logger *logrus.Logger) *API {
-	return &API{service: service, logger: logger.WithField("serviceName", "api").Logger}
+func New(coreService *core.GitBeamService, cronService *cron.Service, logger *logrus.Logger) *API {
+	return &API{
+		coreService: coreService,
+		cronService: cronService,
+		logger:      logger.WithField("serviceName", "apiRouter").Logger,
+	}
 }
 
 func (a API) Routes(router *chi.Mux) {

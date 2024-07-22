@@ -41,6 +41,20 @@ func NewGitBeamService(
 	}
 }
 
+func (g GitBeamService) GetEventStore() store.EventStore {
+	return g.eventStore
+}
+
+func (g GitBeamService) ListRepos(ctx context.Context) ([]*models.Repo, error) {
+	useLogger := g.logger.WithContext(ctx).WithField("methodName", "ListRepos")
+	list, err := g.dataStore.ListRepos(ctx)
+	if err != nil {
+		useLogger.WithError(err).Errorln("failed to list repositories")
+		return make([]*models.Repo, 0), nil
+	}
+	return list, nil
+}
+
 func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models.OwnerAndRepoName) (*models.Repo, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetByOwnerAndRepoName")
 
@@ -51,13 +65,12 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models
 
 	existingRepo, err := g.dataStore.GetRepoByOwner(ctx, owner)
 	if err == nil && existingRepo != nil {
-		existingRepo.IsSaved = true
 		return existingRepo, nil
 	}
 
 	gitRepo, _, err := g.githubClient.Repositories.Get(ctx, owner.OwnerName, owner.RepoName)
 	if err != nil {
-		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
+		useLogger.WithError(err).Errorln("failed to get repo by owner and repo name from github api")
 		return nil, ErrGithubRepoNotFound
 	}
 
@@ -74,13 +87,12 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models
 		TimeCreated:   gitRepo.GetCreatedAt().Time,
 		TimeUpdated:   gitRepo.GetUpdatedAt().Time,
 		Meta:          make(map[string]any),
-		IsSaved:       false,
 	}
 
 	// Take the raw git repo response:, gitRepo -> ([]bytes||string) -> map[string]any
 	// Intentionally ignoring this error message.
 	// Note, this field can be removed totally... It serves no purpose at the moment.
-	_ = utils.UnPack(gitRepo, &repo.Meta)
+	_ = utils.UnPack([]byte(gitRepo.String()), &repo.Meta)
 	if repo.Meta == nil {
 		repo.Meta = make(map[string]any)
 	}
@@ -100,14 +112,4 @@ func (g GitBeamService) GetByOwnerAndRepoName(ctx context.Context, owner *models
 	_ = g.eventStore.Publish(topics.RepoCreated, data)
 
 	return repo, nil
-}
-
-func (g GitBeamService) ListRepos(ctx context.Context) ([]*models.Repo, error) {
-	useLogger := g.logger.WithContext(ctx).WithField("methodName", "ListRepos")
-	list, err := g.dataStore.ListRepos(ctx)
-	if err != nil {
-		useLogger.WithError(err).Errorln("failed to list repositories")
-		return make([]*models.Repo, 0), nil
-	}
-	return list, nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 const cronTrackerTableSetup = `
-CREATE TABLE IF NOT EXISTS cron_tracker (
+CREATE TABLE IF NOT EXISTS cron_tasks (
 		repo_name TEXT,
 		owner_name TEXT,
 		from_date DATETIME,
@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS cron_tracker (
 )
 `
 
-func scanCronTrackerRow(row *sql.Row) (*models.CronTracker, error) {
+func scanCronTrackerRow(row *sql.Row) (*models.CronTask, error) {
 	var fromDateString string
 	var toDateString string
-	var cronTracker models.CronTracker
+	var cronTracker models.CronTask
 	var err error
 	if err = row.Scan(
 		&cronTracker.RepoName,
@@ -46,10 +46,10 @@ func scanCronTrackerRow(row *sql.Row) (*models.CronTracker, error) {
 	return &cronTracker, nil
 }
 
-func scanCronTrackerRows(rows *sql.Rows) (*models.CronTracker, error) {
+func scanCronTrackerRows(rows *sql.Rows) (*models.CronTask, error) {
 	var fromDateString string
 	var toDateString string
-	var cronTracker models.CronTracker
+	var cronTracker models.CronTask
 	var err error
 	if err = rows.Scan(
 		&cronTracker.RepoName,
@@ -73,15 +73,15 @@ func scanCronTrackerRows(rows *sql.Rows) (*models.CronTracker, error) {
 	return &cronTracker, nil
 }
 
-func (s sqliteRepo) ListCronTrackers(ctx context.Context) ([]*models.CronTracker, error) {
-	querySQL := `SELECT * FROM cron_tracker`
+func (s sqliteRepo) ListCronTask(ctx context.Context) ([]*models.CronTask, error) {
+	querySQL := `SELECT * FROM cron_tasks`
 
 	rows, err := s.dataStore.QueryContext(ctx, querySQL)
 	if err != nil {
 		return nil, err
 	}
 
-	var list []*models.CronTracker
+	var list []*models.CronTask
 	defer rows.Close()
 	for rows.Next() {
 		item, err := scanCronTrackerRows(rows)
@@ -95,9 +95,9 @@ func (s sqliteRepo) ListCronTrackers(ctx context.Context) ([]*models.CronTracker
 	return list, nil
 }
 
-func (s sqliteRepo) SaveCronTracker(ctx context.Context, payload models.CronTracker) error {
+func (s sqliteRepo) SaveCronTask(ctx context.Context, payload models.CronTask) error {
 	insertSQL := `
-        INSERT INTO cron_tracker (
+        INSERT INTO cron_tasks (
 			repo_name,
 			owner_name,
 			from_date,
@@ -114,15 +114,15 @@ func (s sqliteRepo) SaveCronTracker(ctx context.Context, payload models.CronTrac
 	return err
 }
 
-func (s sqliteRepo) GetCronTracker(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTracker, error) {
+func (s sqliteRepo) GetCronTask(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTask, error) {
 	row := s.dataStore.QueryRowContext(ctx,
-		`SELECT * from cron_tracker WHERE owner_name = ? AND repo_name = ? LIMIT 1`, owner.OwnerName, owner.RepoName)
+		`SELECT * from cron_tasks WHERE owner_name = ? AND repo_name = ? LIMIT 1`, owner.OwnerName, owner.RepoName)
 	return scanCronTrackerRow(row)
 }
 
-func (s sqliteRepo) DeleteCronTracker(ctx context.Context, owner models.OwnerAndRepoName) error {
+func (s sqliteRepo) DeleteCronTask(ctx context.Context, owner models.OwnerAndRepoName) error {
 	_, err := s.dataStore.ExecContext(ctx,
-		`DELETE from cron_tracker WHERE owner_name = ? AND repo_name = ?`, owner.OwnerName, owner.RepoName)
+		`DELETE from cron_tasks WHERE owner_name = ? AND repo_name = ?`, owner.OwnerName, owner.RepoName)
 
 	return err
 }

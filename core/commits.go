@@ -126,7 +126,7 @@ repeat:
 	return nil
 }
 
-func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.BeamRepoCommitsRequest) (*models.Repo, error) {
+func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.MirrorRepoCommitsRequest) (*models.Repo, error) {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "StartBeamingCommits")
 	repo, err := g.GetByOwnerAndRepoName(ctx, &models.OwnerAndRepoName{
 		OwnerName: payload.OwnerName,
