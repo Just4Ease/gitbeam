@@ -67,69 +67,11 @@ func TestGetRepoByOwnerAndRepoName(t *testing.T) {
 				var repo models.Repo
 				assert.Nil(t, json.NewDecoder(f).Decode(&repo))
 				dataStore.EXPECT().GetRepoByOwner(ctx, owner).MaxTimes(1).Return(&repo, nil)
+			} else {
+				dataStore.EXPECT().GetRepoByOwner(ctx, owner).MaxTimes(1).Return(nil, nil)
 			}
 
 			repo, err := service.GetByOwnerAndRepoName(ctx, owner)
-			if test.ExpectedError != nil {
-				assert.Equal(t, test.ExpectedError, err)
-				assert.Nil(t, repo)
-			} else {
-				assert.Nil(t, err)
-				assert.NotNil(t, repo)
-				assert.Equal(t, test.RepoName, repo.Name)
-				assert.Equal(t, test.OwnerName, repo.Owner)
-			}
-		})
-	}
-}
-
-func TestStartBeamingRepoRepositoryCommits(t *testing.T) {
-	logger := logrus.New()
-
-	controller := gomock.NewController(t)
-	dataStore := mocks.NewMockDataStore(controller)
-	eventStore := mocks.NewMockEventStore(controller)
-
-	service := NewGitBeamService(logger, eventStore, dataStore, nil)
-
-	ctx := context.Background()
-
-	tests := []struct {
-		TestName      string
-		OwnerName     string
-		RepoName      string
-		StartTime     *models.Date
-		EndTime       *models.Date
-		ExpectedError error
-		ExpectedRepo  *models.Repo
-	}{
-		{
-			TestName:      "Beam Valid Owner and Repo Name",
-			OwnerName:     "brave",
-			RepoName:      "brave-browser",
-			ExpectedError: nil,
-		},
-		{
-			TestName:      "Valid Owner and Invalid Repo Name",
-			OwnerName:     "Just4Ease",
-			RepoName:      "mongoleonnnn",
-			StartTime:     nil,
-			EndTime:       nil,
-			ExpectedError: ErrGithubRepoNotFound,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.TestName, func(t *testing.T) {
-			repo, err := service.StartBeamingCommits(ctx, models.MirrorRepoCommitsRequest{
-				OwnerAndRepoName: models.OwnerAndRepoName{
-					OwnerName: test.OwnerName,
-					RepoName:  test.RepoName,
-				},
-				FromDate: test.StartTime,
-				ToDate:   test.EndTime,
-			})
-
 			if test.ExpectedError != nil {
 				assert.Equal(t, test.ExpectedError, err)
 				assert.Nil(t, repo)

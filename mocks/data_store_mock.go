@@ -36,20 +36,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// DeleteCronTracker mocks base method.
-func (m *MockDataStore) DeleteCronTracker(ctx context.Context, owner models.OwnerAndRepoName) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteCronTask", ctx, owner)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteCronTracker indicates an expected call of DeleteCronTracker.
-func (mr *MockDataStoreMockRecorder) DeleteCronTracker(ctx, owner interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCronTask", reflect.TypeOf((*MockDataStore)(nil).DeleteCronTracker), ctx, owner)
-}
-
 // GetCommitBySHA mocks base method.
 func (m *MockDataStore) GetCommitBySHA(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error) {
 	m.ctrl.T.Helper()
@@ -63,21 +49,6 @@ func (m *MockDataStore) GetCommitBySHA(ctx context.Context, owner models.OwnerAn
 func (mr *MockDataStoreMockRecorder) GetCommitBySHA(ctx, owner, sha interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitBySHA", reflect.TypeOf((*MockDataStore)(nil).GetCommitBySHA), ctx, owner, sha)
-}
-
-// GetCronTracker mocks base method.
-func (m *MockDataStore) GetCronTracker(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTask, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCronTask", ctx, owner)
-	ret0, _ := ret[0].(*models.CronTask)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCronTracker indicates an expected call of GetCronTracker.
-func (mr *MockDataStoreMockRecorder) GetCronTracker(ctx, owner interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCronTask", reflect.TypeOf((*MockDataStore)(nil).GetCronTracker), ctx, owner)
 }
 
 // GetLastCommit mocks base method.
@@ -108,6 +79,21 @@ func (m *MockDataStore) GetRepoByOwner(ctx context.Context, owner *models.OwnerA
 func (mr *MockDataStoreMockRecorder) GetRepoByOwner(ctx, owner interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoByOwner", reflect.TypeOf((*MockDataStore)(nil).GetRepoByOwner), ctx, owner)
+}
+
+// GetTopCommitAuthors mocks base method.
+func (m *MockDataStore) GetTopCommitAuthors(ctx context.Context, filter models.CommitFilters) ([]*models.TopCommitAuthor, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopCommitAuthors", ctx, filter)
+	ret0, _ := ret[0].([]*models.TopCommitAuthor)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTopCommitAuthors indicates an expected call of GetTopCommitAuthors.
+func (mr *MockDataStoreMockRecorder) GetTopCommitAuthors(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopCommitAuthors", reflect.TypeOf((*MockDataStore)(nil).GetTopCommitAuthors), ctx, filter)
 }
 
 // ListCommits mocks base method.
@@ -154,20 +140,6 @@ func (mr *MockDataStoreMockRecorder) SaveCommit(ctx, payload interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommit", reflect.TypeOf((*MockDataStore)(nil).SaveCommit), ctx, payload)
 }
 
-// SaveCronTracker mocks base method.
-func (m *MockDataStore) SaveCronTracker(ctx context.Context, tracker models.CronTask) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveCronTask", ctx, tracker)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveCronTracker indicates an expected call of SaveCronTracker.
-func (mr *MockDataStoreMockRecorder) SaveCronTracker(ctx, tracker interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCronTask", reflect.TypeOf((*MockDataStore)(nil).SaveCronTracker), ctx, tracker)
-}
-
 // StoreRepository mocks base method.
 func (m *MockDataStore) StoreRepository(ctx context.Context, payload *models.Repo) error {
 	m.ctrl.T.Helper()
@@ -180,4 +152,85 @@ func (m *MockDataStore) StoreRepository(ctx context.Context, payload *models.Rep
 func (mr *MockDataStoreMockRecorder) StoreRepository(ctx, payload interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreRepository", reflect.TypeOf((*MockDataStore)(nil).StoreRepository), ctx, payload)
+}
+
+// MockCronServiceStore is a mock of CronServiceStore interface.
+type MockCronServiceStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockCronServiceStoreMockRecorder
+}
+
+// MockCronServiceStoreMockRecorder is the mock recorder for MockCronServiceStore.
+type MockCronServiceStoreMockRecorder struct {
+	mock *MockCronServiceStore
+}
+
+// NewMockCronServiceStore creates a new mock instance.
+func NewMockCronServiceStore(ctrl *gomock.Controller) *MockCronServiceStore {
+	mock := &MockCronServiceStore{ctrl: ctrl}
+	mock.recorder = &MockCronServiceStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCronServiceStore) EXPECT() *MockCronServiceStoreMockRecorder {
+	return m.recorder
+}
+
+// DeleteCronTask mocks base method.
+func (m *MockCronServiceStore) DeleteCronTask(ctx context.Context, owner models.OwnerAndRepoName) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCronTask", ctx, owner)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCronTask indicates an expected call of DeleteCronTask.
+func (mr *MockCronServiceStoreMockRecorder) DeleteCronTask(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCronTask", reflect.TypeOf((*MockCronServiceStore)(nil).DeleteCronTask), ctx, owner)
+}
+
+// GetCronTask mocks base method.
+func (m *MockCronServiceStore) GetCronTask(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCronTask", ctx, owner)
+	ret0, _ := ret[0].(*models.CronTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCronTask indicates an expected call of GetCronTask.
+func (mr *MockCronServiceStoreMockRecorder) GetCronTask(ctx, owner interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCronTask", reflect.TypeOf((*MockCronServiceStore)(nil).GetCronTask), ctx, owner)
+}
+
+// ListCronTask mocks base method.
+func (m *MockCronServiceStore) ListCronTask(ctx context.Context) ([]*models.CronTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCronTask", ctx)
+	ret0, _ := ret[0].([]*models.CronTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListCronTask indicates an expected call of ListCronTask.
+func (mr *MockCronServiceStoreMockRecorder) ListCronTask(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCronTask", reflect.TypeOf((*MockCronServiceStore)(nil).ListCronTask), ctx)
+}
+
+// SaveCronTask mocks base method.
+func (m *MockCronServiceStore) SaveCronTask(ctx context.Context, task models.CronTask) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveCronTask", ctx, task)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveCronTask indicates an expected call of SaveCronTask.
+func (mr *MockCronServiceStoreMockRecorder) SaveCronTask(ctx, task interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCronTask", reflect.TypeOf((*MockCronServiceStore)(nil).SaveCronTask), ctx, task)
 }

@@ -125,25 +125,3 @@ repeat:
 
 	return nil
 }
-
-func (g GitBeamService) StartBeamingCommits(ctx context.Context, payload models.MirrorRepoCommitsRequest) (*models.Repo, error) {
-	useLogger := g.logger.WithContext(ctx).WithField("methodName", "StartBeamingCommits")
-	repo, err := g.GetByOwnerAndRepoName(ctx, &models.OwnerAndRepoName{
-		OwnerName: payload.OwnerName,
-		RepoName:  payload.RepoName,
-	})
-	if err != nil {
-		useLogger.WithError(err).Errorln("GetByOwnerAndRepoName")
-		return nil, err
-	}
-
-	if payload.FromDate != nil {
-		repo.Meta["startTime"] = payload.FromDate.String() // To be consumed by the commit background activity.
-	}
-
-	if payload.ToDate != nil {
-		repo.Meta["endTime"] = payload.ToDate.String() // To be consumed by the commit background activity.
-	}
-
-	return repo, nil
-}
