@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"gitbeam/api"
 	"gitbeam/core"
+	"gitbeam/cron"
 	"gitbeam/events"
 	"gitbeam/repository"
 	"gitbeam/repository/sqlite"
@@ -21,9 +21,9 @@ import (
 )
 
 func main() {
-	var db *sql.DB
 	var eventStore store.EventStore
 	var dataStore repository.DataStore
+	var cronStore repository.CronServiceStore
 	var err error
 
 	logger := logrus.New()
@@ -31,14 +31,10 @@ func main() {
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(logrus.InfoLevel)
 
-	if db, err = sql.Open("sqlite3", "data.db"); err != nil {
-		logger.WithError(err).Fatal("failed to open database")
-	}
-
 	//Using SQLite as the mini persistent storage.
 	//( in a real world system, this would be any production level or vendor managed db )
-	if dataStore, err = sqlite.NewSqliteRepo(db); err != nil {
-		logger.WithError(err).Fatal("failed to initialize sqlite database repository")
+	if dataStore, err = sqlite.NewSqliteRepo("data.db"); err != nil {
+		logger.WithError(err).Fatal("failed to initialize sqlite database repository for cron store.")
 	}
 
 	// A channel based pub/sub messaging system.
@@ -51,6 +47,14 @@ func main() {
 
 	// To handle event-based background activities. ( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
 	go events.NewEventHandler(eventStore, logger, service).Listen()
+
+	//Using SQLite as the mini persistent storage.
+	//( in a real world system, this would be any production level or vendor managed db )
+	if cronStore, err = sqlite.NewSqliteCronStore("cron_store.db"); err != nil {
+		logger.WithError(err).Fatal("failed to initialize sqlite database repository for cron store.")
+	}
+	
+	go cron.NewCronService(cronStore, service, logger).Start()
 
 	router := chi.NewRouter()
 	api.New(service, logger).Routes(router)

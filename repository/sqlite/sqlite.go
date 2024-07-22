@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"gitbeam/repository"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // In a real world application, I would use https://entgo.io/ for MySQL/SQLite/Postgresql ( RMDBs ) or mongodb directly.
@@ -11,7 +12,12 @@ type sqliteRepo struct {
 	dataStore *sql.DB
 }
 
-func NewSqliteRepo(db *sql.DB) (repository.DataStore, error) {
+func NewSqliteRepo(dbName string) (repository.DataStore, error) {
+	db, err := sql.Open("sqlite3", dbName)
+	if err != nil {
+		return nil, err
+	}
+
 	if _, err := db.Exec(repoTableSetup); err != nil {
 		return nil, err
 	}

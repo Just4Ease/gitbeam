@@ -5,7 +5,6 @@ import (
 	"errors"
 	"gitbeam/models"
 	"github.com/google/go-github/v63/github"
-	"time"
 )
 
 var (
@@ -50,6 +49,7 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, filters models.
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "FetchAndSaveCommits")
 	pageNumber := 1
 
+	// TODO: use the list commit thing as a way to internally skip existing records before pulling them from github.
 	//list, _ := g.dataStore.ListCommits(ctx, filters)
 
 	//lastCommit, _ := g.dataStore.GetLastCommit(ctx, &filters.Owner, filters.FromDate)
@@ -64,8 +64,8 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, filters models.
 
 repeat:
 	gitCommits, response, err := g.githubClient.Repositories.ListCommits(ctx, filters.OwnerName, filters.OwnerName, &github.CommitsListOptions{
-		//Since: startTimeCursor,
-		Until: time.Now(),
+		Since: filters.FromDate.Time,
+		Until: filters.ToDate.Time,
 		ListOptions: github.ListOptions{
 			Page:    pageNumber,
 			PerPage: 1000,

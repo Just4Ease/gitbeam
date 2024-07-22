@@ -16,8 +16,11 @@ type DataStore interface {
 	ListCommits(ctx context.Context, filter models.ListCommitFilter) ([]*models.Commit, error)
 	GetLastCommit(ctx context.Context, owner *models.OwnerAndRepoName, startTime *time.Time) (*models.Commit, error)
 	GetCommitBySHA(ctx context.Context, owner models.OwnerAndRepoName, sha string) (*models.Commit, error)
+}
 
+type CronServiceStore interface {
 	SaveCronTracker(ctx context.Context, tracker models.CronTracker) error
 	GetCronTracker(ctx context.Context, owner models.OwnerAndRepoName) (*models.CronTracker, error)
 	DeleteCronTracker(ctx context.Context, owner models.OwnerAndRepoName) error
+	ListCronTrackers(ctx context.Context) ([]*models.CronTracker, error)
 }
