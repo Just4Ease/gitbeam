@@ -61,20 +61,17 @@ func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, filters models.
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "FetchAndSaveCommits")
 	pageNumber := 1
 
-	// TODO: use the list commit thing as a way to internally skip existing records before pulling them from github.
-	//list, _ := g.dataStore.ListCommits(ctx, filters)
+	list, _ := g.dataStore.ListCommits(ctx, filters)
+	if len(list) > 1 {
+		// TODO: use the list commit thing as a way to internally skip existing records before pulling new ones from from github.
+		//filters.ToDate, _ = models.Parse(list[0].Date.Format(time.DateOnly))
+		//if len(list) > 1 {
+		//	filters.FromDate, _ = models.Parse(list[len(list)-1].Date.Format(time.DateOnly))
+		//}
+		return nil
+	}
 
-	//lastCommit, _ := g.dataStore.GetLastCommit(ctx, &filters.Owner, filters.FromDate)
-	//if lastCommit != nil {
-	//	*filters.FromDate = lastCommit.Date.Add(time.Millisecond)
-	//	useLogger.WithFields(logrus.Fields{
-	//		"repo_name":  owner.RepoName,
-	//		"owner_name": owner.OwnerName,
-	//		"start_time": startTimeCursor,
-	//	}).Infoln("updated start time to be 1ms greater than the last record in the database so as not to repeat commits or waste rate limits.")
-	//}
-
-repeat:
+run:
 	gitCommits, response, err := g.githubClient.Repositories.ListCommits(ctx, filters.OwnerName, filters.OwnerName, &github.CommitsListOptions{
 		Since: filters.FromDate.Time,
 		Until: filters.ToDate.Time,
@@ -120,7 +117,7 @@ repeat:
 	// else we exit until FetchAndSaveCommits is called by a cron.
 	if len(gitCommits) > 0 && response.Rate.Remaining > 0 { // TODO: Apply rate limiting rules to respect github's rate limit flow.
 		pageNumber += 1
-		goto repeat
+		goto run
 	}
 
 	return nil
