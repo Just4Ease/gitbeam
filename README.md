@@ -9,8 +9,8 @@ Dependencies
 - Chi Router v5 ( as pure as net/http )
 
 
-
 1. See the docs folder for more information on the workflow.
-2. Import the postman collection to see and consume the endpoints.
+2. `go run main.go` it runs on port :8080
+3.  Import the postman collection to see and consume the endpoints.
 
 
