@@ -122,9 +122,20 @@ func (s Service) listCronTasksAndExecuteRepoCommitsMirroring() {
 		wg.Add(1)
 		go func(name models.OwnerAndRepoName) {
 			defer wg.Done()
-			_ = s.service.FetchAndSaveCommits(ctx, models.CommitFilters{
+
+			filters := models.CommitFilters{
 				OwnerAndRepoName: name,
-			})
+			}
+
+			filters.ToDate, _ = models.Parse(time.Now().Format(time.DateOnly))
+			if lastCommit, _ := s.service.GetLastCommit(ctx, name); lastCommit != nil {
+				filters.FromDate, _ = models.Parse(lastCommit.Date.Format(time.DateTime))
+			} else {
+				filters.FromDate = nil
+				filters.ToDate = nil
+			}
+
+			_ = s.service.FetchAndSaveCommits(ctx, filters)
 		}(models.OwnerAndRepoName{
 			OwnerName: tracker.OwnerName,
 			RepoName:  tracker.RepoName,

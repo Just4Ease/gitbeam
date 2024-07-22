@@ -57,29 +57,47 @@ func (g GitBeamService) GetCommitsBySha(ctx context.Context, owner models.OwnerA
 	return commit, nil
 }
 
+func (g GitBeamService) GetLastCommit(ctx context.Context, owner models.OwnerAndRepoName) (*models.Commit, error) {
+	useLogger := g.logger.WithContext(ctx).WithField("methodName", "GetCommitsBySha")
+	commit, err := g.dataStore.GetLastCommit(ctx, &owner, nil)
+	if err != nil {
+		useLogger.WithError(err).Errorln("failed to fetch last commit from the dataStore")
+		return nil, ErrCommitNotFound
+	}
+
+	return commit, nil
+}
+
 func (g GitBeamService) FetchAndSaveCommits(ctx context.Context, filters models.CommitFilters) error {
 	useLogger := g.logger.WithContext(ctx).WithField("methodName", "FetchAndSaveCommits")
 	pageNumber := 1
 
-	list, _ := g.dataStore.ListCommits(ctx, filters)
-	if len(list) > 1 {
-		// TODO: use the list commit thing as a way to internally skip existing records before pulling new ones from from github.
-		//filters.ToDate, _ = models.Parse(list[0].Date.Format(time.DateOnly))
-		//if len(list) > 1 {
-		//	filters.FromDate, _ = models.Parse(list[len(list)-1].Date.Format(time.DateOnly))
-		//}
-		return nil
-	}
+	//list, _ := g.dataStore.ListCommits(ctx, filters)
+	//if len(list) > 1 {
+	//	// TODO: use the list commit thing as a way to internally skip existing records before pulling new ones from from github.
+	//	//filters.ToDate, _ = models.Parse(list[0].Date.Format(time.DateOnly))
+	//	//if len(list) > 1 {
+	//	//	filters.FromDate, _ = models.Parse(list[len(list)-1].Date.Format(time.DateOnly))
+	//	//}
+	//	return nil
+	//}
 
-run:
-	gitCommits, response, err := g.githubClient.Repositories.ListCommits(ctx, filters.OwnerName, filters.OwnerName, &github.CommitsListOptions{
-		Since: filters.FromDate.Time,
-		Until: filters.ToDate.Time,
+	ghOptions := github.CommitsListOptions{
 		ListOptions: github.ListOptions{
 			Page:    pageNumber,
 			PerPage: 1000,
 		},
-	})
+	}
+
+	if filters.FromDate != nil {
+		ghOptions.Since = filters.FromDate.Time
+	}
+
+	if filters.ToDate != nil {
+		ghOptions.Until = filters.ToDate.Time
+	}
+run:
+	gitCommits, response, err := g.githubClient.Repositories.ListCommits(ctx, filters.OwnerName, filters.OwnerName, &ghOptions)
 
 	if err != nil {
 		useLogger.WithError(err).Error("failed to list commits from github")
