@@ -124,11 +124,62 @@ end
 end
 
 rect rgb(0,0,0)
-alt if not found
+alt if not found in db, and fallsback to github.
 	core ->> github: getRepo(owner, repo)
+	rect rgb(0,0,100)
+	alt if not found on github
+		github -->> core: not found
+	end
+	end
+	
+	rect rgb(100,0,100)
+	alt if found on github
+		github -->> core: repo
+		core -->> db: save repo
+	end
+	end
 end
 end
 
 core -->> gRPC: repo
+```
+
+
+
+
+
+# Commit Monitor ( Start Process )
+
+```mermaid
+sequenceDiagram;
+autonumber;
+
+participant gRPC
+participant scheduler
+participant db.cron_tracker
+participant eventStore
+participant core
+participant github
+
+gRPC ->> scheduler: startMonitoringRepo(monitor_payload)
+scheduler ->> db.cron_tracker: save(monitor_payload)
+
+rect rgb(90,50,0)
+par save to job
+scheduler ->> scheduler: registerJob(monitor_payload)
+Note left of scheduler: Register job with the duration in monitor_payload (this can always be updated via the input)
+scheduler ->> core: service.FetchAndSaveCommit(monitor_payload)
+Note over scheduler, core: does not use the provided date range, so that it keeps tracking new changes from github.
+end
+end
+
+rect rgb(0,0,0)
+par event handling in parallel
+scheduler ->> eventStore: monitor_payload
+eventStore ->> core: service.FetchAndSaveCommit(monitor_payload)
+Note over eventStore, core: uses the date range filter in the monitor payload to fetch if available.
+end
+end
+
 ```
 
