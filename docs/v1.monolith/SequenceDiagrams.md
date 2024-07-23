@@ -99,3 +99,36 @@ api -->> world: {success, message: "Successfully stopped mirroring commits"}
 end
 ```
 
+
+
+
+
+
+
+# Repo Manager
+
+```mermaid
+sequenceDiagram;
+autonumber;
+participant gRPC
+participant core
+participant db
+participant github
+
+gRPC ->> core: rpc.GetRepoByOwnerAndRepoName()
+core ->> db: getByOwnerAndRepoName
+rect rgb(0,100,0)
+alt if found
+	db -->> core: repo
+end
+end
+
+rect rgb(0,0,0)
+alt if not found
+	core ->> github: getRepo(owner, repo)
+end
+end
+
+core -->> gRPC: repo
+```
+

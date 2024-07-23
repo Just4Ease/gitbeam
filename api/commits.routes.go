@@ -18,8 +18,8 @@ func (a API) newCommitsRoute() chi.Router {
 	router.Get("/", a.listCommits)
 	router.Get("/top-authors", a.listTopCommitAuthors)
 	router.Get("/{ownerName}/{repoName}/{sha}", a.getCommitBySha)
-	router.Post("/start-mirroring", a.startMirroringRepoCommits)
-	router.Post("/stop-mirroring", a.stopMirroringRepoCommits)
+	router.Post("/start-monitoring", a.startMonitoringRepoCommits)
+	router.Post("/stop-monitoring", a.stopMonitoringRepoCommits)
 
 	return router
 }
@@ -121,31 +121,39 @@ func (a API) getCommitBySha(w http.ResponseWriter, r *http.Request) {
 	utils.WriteHTTPSuccess(w, "Successfully retrieved commit", commit)
 }
 
-func (a API) startMirroringRepoCommits(w http.ResponseWriter, r *http.Request) {
-	//useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "startMirroringRepoCommits").Logger
-	//var payload models.MirrorRepoCommitsRequest
-	//if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-	//	useLogger.WithError(err).Error("error decoding payload into mirroring repo commits struct.")
-	//	utils.WriteHTTPError(w, http.StatusBadRequest, err)
-	//	return
-	//}
-	//
-	//repo, err := a.cronService.StartMirroringRepoCommits(r.Context(), payload)
-	//if err != nil {
-	//	statusCode := http.StatusBadRequest
-	//	if errors.Is(err, core.ErrGithubRepoNotFound) {
-	//		statusCode = http.StatusNotFound
-	//	}
-	//
-	//	utils.WriteHTTPError(w, statusCode, err)
-	//	return
-	//}
-	//
-	//utils.WriteHTTPSuccess(w, "Successfully started mirroring/beaming repo commits.", repo)
+func (a API) startMonitoringRepoCommits(w http.ResponseWriter, r *http.Request) {
+	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "startMonitoringRepoCommits").Logger
+
+	var payload commits.MonitorRepositoryCommitsConfigParams
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		useLogger.WithError(err).Error("failed to decode query params into filters.")
+		utils.WriteHTTPError(w, http.StatusBadRequest, errors.New("Bad/Invalid Query Parameters"))
+		return
+	}
+
+	_, err := a.reposRPC.GetGitRepo(r.Context(), &gitRepos.GetGitRepoRequest{
+		OwnerName: payload.OwnerName,
+		RepoName:  payload.RepoName,
+	})
+	if err != nil {
+		useLogger.WithError(err).Error("failed to get repo from repo rpc service.")
+		utils.WriteHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	_, err = a.commitsRPC.StartMonitoringRepositoryCommits(r.Context(), &payload)
+	if err != nil {
+		useLogger.WithError(err).Error("failed to start monitoring repository commits")
+		statusCode := http.StatusBadRequest
+		utils.WriteHTTPError(w, statusCode, err)
+		return
+	}
+
+	utils.WriteHTTPSuccess(w, "Successfully started monitoring repo commits.", nil)
 }
 
-func (a API) stopMirroringRepoCommits(w http.ResponseWriter, r *http.Request) {
-	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "stopMirroringRepoCommits").Logger
+func (a API) stopMonitoringRepoCommits(w http.ResponseWriter, r *http.Request) {
+	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "stopMonitoringRepoCommits").Logger
 	var payload models.OwnerAndRepoName
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		useLogger.WithError(err).Error("error decoding payload")
