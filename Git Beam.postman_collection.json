@@ -27,12 +27,12 @@
 							"variable": [
 								{
 									"key": "ownerName",
-									"value": "brave",
+									"value": "chromium",
 									"description": "The owner of the repository - could be an individual or an organisation username."
 								},
 								{
 									"key": "repoName",
-									"value": "brave-browser",
+									"value": "chromium",
 									"description": "The repository that needs to be retrieved from github."
 								}
 							]
@@ -40,57 +40,6 @@
 						"description": "This Endpoint is used to get a git repository\n\nIt requires the following valid query strings:\n\n- ownerName\n    \n- repoName"
 					},
 					"response": [
-						{
-							"name": "Get Repository - Success",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "http://localhost:8080/repos/:ownerName/:repoName",
-									"protocol": "http",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"repos",
-										":ownerName",
-										":repoName"
-									],
-									"variable": [
-										{
-											"key": "ownerName",
-											"value": "brave",
-											"description": "The owner of the repository - could be an individual or an organisation username."
-										},
-										{
-											"key": "repoName",
-											"value": "brave-browser",
-											"description": "The repository that needs to be retrieved from github."
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json; charset=utf-8"
-								},
-								{
-									"key": "Date",
-									"value": "Sun, 21 Jul 2024 15:13:05 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "423"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"message\": \"Successfully retrieved repo\",\n    \"data\": {\n        \"timeCreated\": \"2017-11-09T23:44:38Z\",\n        \"timeUpdated\": \"2024-07-21T10:07:51Z\",\n        \"name\": \"brave-browser\",\n        \"owner\": \"brave\",\n        \"description\": \"Brave browser for Android, iOS, Linux, macOS, Windows.\",\n        \"url\": \"https://github.com/brave/brave-browser\",\n        \"language\": \"JavaScript\",\n        \"forkCounts\": 2228,\n        \"starCounts\": 17062,\n        \"openIssues\": 7509,\n        \"watchersCount\": 17062,\n        \"isSaved\": true,\n        \"meta\": {}\n    }\n}"
-						},
 						{
 							"name": "Get Repository - Invalid Owner or Repo Name",
 							"originalRequest": {
@@ -188,6 +137,57 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"success\": false,\n    \"message\": \"github repo not found\"\n}"
+						},
+						{
+							"name": "Get Repository - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/repos/:ownerName/:repoName",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"repos",
+										":ownerName",
+										":repoName"
+									],
+									"variable": [
+										{
+											"key": "ownerName",
+											"value": "brave",
+											"description": "The owner of the repository - could be an individual or an organisation username."
+										},
+										{
+											"key": "repoName",
+											"value": "brave-browser",
+											"description": "The repository that needs to be retrieved from github."
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 21 Jul 2024 15:13:05 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "423"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Successfully retrieved repo\",\n    \"data\": {\n        \"timeCreated\": \"2017-11-09T23:44:38Z\",\n        \"timeUpdated\": \"2024-07-21T10:07:51Z\",\n        \"name\": \"brave-browser\",\n        \"owner\": \"brave\",\n        \"description\": \"Brave browser for Android, iOS, Linux, macOS, Windows.\",\n        \"url\": \"https://github.com/brave/brave-browser\",\n        \"language\": \"JavaScript\",\n        \"forkCounts\": 2228,\n        \"starCounts\": 17062,\n        \"openIssues\": 7509,\n        \"watchersCount\": 17062,\n        \"isSaved\": true,\n        \"meta\": {}\n    }\n}"
 						}
 					]
 				},
@@ -698,7 +698,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"ownerName\": \"brave\",\n    \"repoName\": \"brave-browser\"\n}",
+							"raw": "{\n    \"ownerName\": \"chromium\",\n    \"repoName\": \"chromium\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -706,13 +706,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{BaseURL}}/commits/stop-mirroring",
+							"raw": "{{BaseURL}}/commits/stop-monitoring",
 							"host": [
 								"{{BaseURL}}"
 							],
 							"path": [
 								"commits",
-								"stop-mirroring"
+								"stop-monitoring"
 							]
 						},
 						"description": "This Endpoint is used to get a git repository\n\nIt requires the following valid query strings:\n\n- ownerName\n    \n- repoName"
