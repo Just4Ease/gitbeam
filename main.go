@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"gitbeam/api"
 	"gitbeam/api/pb/commits"
 	gitRepos "gitbeam/api/pb/repos"
+	"gitbeam/config"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
@@ -24,30 +26,35 @@ func main() {
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(logrus.InfoLevel)
 	router := chi.NewRouter()
+	secrets := config.GetSecrets()
+
+	var repoServiceRPC gitRepos.GitBeamRepositoryServiceClient
+	var commitsServiceRPC commits.GitBeamCommitsServiceClient
 	var err error
 
-	repoServiceRPC, err := connectRPC[gitRepos.GitBeamRepositoryServiceClient]("localhost:8001", func(connection grpc.ClientConnInterface) any {
-		return gitRepos.NewGitBeamRepositoryServiceClient(connection)
-	})
-	if err != nil {
+	if repoServiceRPC, err = connectRPC[gitRepos.GitBeamRepositoryServiceClient](
+		secrets.RepoManagerURL,
+		func(connection grpc.ClientConnInterface) any {
+			return gitRepos.NewGitBeamRepositoryServiceClient(connection)
+		}); err != nil {
 		logger.WithError(err).Fatal("failed to connect to repos RPC server")
 	}
 
-	commitsServiceRPC, err := connectRPC[commits.GitBeamCommitsServiceClient]("localhost:8002", func(connection grpc.ClientConnInterface) any {
-		return commits.NewGitBeamCommitsServiceClient(connection)
-	})
-	if err != nil {
+	if commitsServiceRPC, err = connectRPC[commits.GitBeamCommitsServiceClient](
+		secrets.CommitsMonitorURL,
+		func(connection grpc.ClientConnInterface) any {
+			return commits.NewGitBeamCommitsServiceClient(connection)
+		}); err != nil {
 		logger.WithError(err).Fatal("failed to connect to commits RPC server")
 	}
 
 	api.New(commitsServiceRPC, repoServiceRPC, logger).Routes(router)
-
-	startAndManageHTTPServer(router, logger)
+	startAndManageHTTPServer(router, secrets.Port, logger)
 }
 
-func startAndManageHTTPServer(router *chi.Mux, logger *logrus.Logger) {
+func startAndManageHTTPServer(router *chi.Mux, port string, logger *logrus.Logger) {
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: router,
 	}
 
@@ -90,13 +97,15 @@ func startAndManageHTTPServer(router *chi.Mux, logger *logrus.Logger) {
 }
 
 func connectRPC[T any](address string, fn connectRPCFunc) (T, error) {
+	a := new(T) // As nil.
 	connection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		a := new(T) // As nil.
 		return *a, err
 	}
-
-	out := fn(connection).(T)
+	out, ok := fn(connection).(T)
+	if !ok {
+		return *a, errors.New("invalid RPC type expectation")
+	}
 	return out, nil
 }
 

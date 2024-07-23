@@ -1,8 +1,10 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"gitbeam/api/pb/commits"
+	gitRepos "gitbeam/api/pb/repos"
 	"gitbeam/models"
 	"gitbeam/utils"
 	"github.com/go-chi/chi/v5"
@@ -143,21 +145,34 @@ func (a API) startMirroringRepoCommits(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a API) stopMirroringRepoCommits(w http.ResponseWriter, r *http.Request) {
-	//useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "stopMirroringRepoCommits").Logger
-	//var payload models.OwnerAndRepoName
-	//if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-	//	useLogger.WithError(err).Error("error decoding payload")
-	//	utils.WriteHTTPError(w, http.StatusBadRequest, err)
-	//	return
-	//}
+	useLogger := a.logger.WithContext(r.Context()).WithField("endpointName", "stopMirroringRepoCommits").Logger
+	var payload models.OwnerAndRepoName
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		useLogger.WithError(err).Error("error decoding payload")
+		utils.WriteHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	_, err := a.reposRPC.GetGitRepo(r.Context(), &gitRepos.GetGitRepoRequest{
+		OwnerName: payload.OwnerName,
+		RepoName:  payload.RepoName,
+	})
+	if err != nil {
+		useLogger.WithError(err).WithField("payload", payload).Error("failed to get repo from repo rpc service.")
+		utils.WriteHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	_, err = a.commitsRPC.StopMonitoringRepositoryCommits(r.Context(), &commits.StopMonitoringRepositoryCommitParams{
+		OwnerName: payload.OwnerName,
+		RepoName:  payload.RepoName,
+	})
+	if err != nil {
+		useLogger.WithError(err).Error("failed to stop monitoring repository commits")
+		statusCode := http.StatusBadRequest
+		utils.WriteHTTPError(w, statusCode, err)
+		return
+	}
 	//
-	//err := a.cronService.StopMirroringRepoCommits(r.Context(), payload)
-	//if err != nil {
-	//	useLogger.WithError(err).Error("failed to remove cron task")
-	//	statusCode := http.StatusBadRequest
-	//	utils.WriteHTTPError(w, statusCode, err)
-	//	return
-	//}
-	//
-	//utils.WriteHTTPSuccess(w, "Successfully stopped mirroring/beaming repo commits.", nil)
+	utils.WriteHTTPSuccess(w, "Successfully stopped monitoring repo commits.", nil)
 }
