@@ -9,7 +9,7 @@ cd - || exit;
 
 rm -rf ../gitbeam.commit.monitor || exit;
 git clone https://github.com/Just4Ease/gitbeam.commit.monitor ../gitbeam.commit.monitor
-cd ../gitbeam.repo.manager && git submodule update --init --recursive --remote --checkout --force --rebase --recursive || exit;
+cd ../gitbeam.commit.monitor && git submodule update --init --recursive --remote --checkout --force --rebase --recursive || exit;
 cd - || exit;
 
 docker-compose up
