@@ -11,9 +11,18 @@ endif
 
 GO_SOURCES_OWN := $(filter-out vendor/%, $(GO_SOURCES))
 
-.PHONY: build
-build: schema
-	go build -o srv *.go
+PROTO_SRC_DIR := ${PWD}/gitbeam.baselib/protos
+PROTO_DST_DIR := ${PWD}/api/pb/
+
+
+.PHONY: proto
+proto:
+	go get github.com/golang/protobuf/protoc-gen-go
+	go install github.com/golang/protobuf/protoc-gen-go
+	mkdir -p ${PROTO_DST_DIR}/repos && protoc -I=${PROTO_SRC_DIR} --go_out=plugins=grpc:${PROTO_DST_DIR}/repos ${PROTO_SRC_DIR}/repos/repos.proto
+	mkdir -p ${PROTO_DST_DIR}/commits && protoc -I=${PROTO_SRC_DIR} --go_out=plugins=grpc:${PROTO_DST_DIR}/commits ${PROTO_SRC_DIR}/commits/commits.proto
+	make alignment
+
 
 .PHONY: test
 test:
@@ -44,7 +53,6 @@ vet:
 fmt:
 	gofmt -w .
 
-fmt-check:
 fmt-check:
 	@diff=$$($(GOFMT) -d $(GO_SOURCES_OWN)); \
 	if [ -n "$$diff" ]; then \

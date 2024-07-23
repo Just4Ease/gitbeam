@@ -44,7 +44,7 @@ func (ct *Date) UnmarshalText(data []byte) error {
 }
 
 // String returns the time formatted using the custom layout.
-func (ct Date) String() string {
+func (ct *Date) String() string {
 	return ct.Format(time.DateOnly)
 }
 

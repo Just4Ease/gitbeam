@@ -4,15 +4,13 @@ import (
 	"context"
 	"fmt"
 	"gitbeam/api"
-	"gitbeam/core"
-	"gitbeam/cron"
-	"gitbeam/events"
-	"gitbeam/repository"
-	"gitbeam/repository/sqlite"
-	"gitbeam/store"
+	"gitbeam/api/pb/commits"
+	gitRepos "gitbeam/api/pb/repos"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,44 +19,28 @@ import (
 )
 
 func main() {
-	var eventStore store.EventStore
-	var dataStore repository.DataStore
-	var cronStore repository.CronServiceStore
-	var err error
-
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(logrus.InfoLevel)
 	router := chi.NewRouter()
+	var err error
 
-	//Using SQLite as the mini persistent storage.
-	//( in a real world system, this would be any production level or vendor managed db )
-	if dataStore, err = sqlite.NewSqliteRepo("data.db"); err != nil {
-		logger.WithError(err).Fatal("failed to initialize sqlite database repository for cron store.")
+	repoServiceRPC, err := connectRPC[gitRepos.GitBeamRepositoryServiceClient]("localhost:8001", func(connection grpc.ClientConnInterface) any {
+		return gitRepos.NewGitBeamRepositoryServiceClient(connection)
+	})
+	if err != nil {
+		logger.WithError(err).Fatal("failed to connect to repos RPC server")
 	}
 
-	// A channel based pub/sub messaging system.
-	//( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
-	eventStore = store.NewEventStore(logger)
-
-	// If the dependencies were more than 3, I would use a variadic function to inject them.
-	//Clarity is better here for this exercise.
-	coreService := core.NewGitBeamService(logger, eventStore, dataStore, nil)
-
-	// To handle event-based background activities. ( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
-	go events.NewEventHandler(eventStore, logger, coreService).Listen()
-
-	//Using SQLite as the mini persistent storage.
-	//( in a real world system, this would be any production level or vendor managed db )
-	if cronStore, err = sqlite.NewSqliteCronStore("cron_store.db"); err != nil {
-		logger.WithError(err).Fatal("failed to initialize sqlite database repository for cron store.")
+	commitsServiceRPC, err := connectRPC[commits.GitBeamCommitsServiceClient]("localhost:8002", func(connection grpc.ClientConnInterface) any {
+		return commits.NewGitBeamCommitsServiceClient(connection)
+	})
+	if err != nil {
+		logger.WithError(err).Fatal("failed to connect to commits RPC server")
 	}
 
-	cronService := cron.NewCronService(cronStore, coreService, logger)
-	go cronService.Start()
-
-	api.New(coreService, cronService, logger).Routes(router)
+	api.New(commitsServiceRPC, repoServiceRPC, logger).Routes(router)
 
 	startAndManageHTTPServer(router, logger)
 }
@@ -106,3 +88,16 @@ func startAndManageHTTPServer(router *chi.Mux, logger *logrus.Logger) {
 	<-shutdownChan
 	logger.Info("Server gracefully stopped...")
 }
+
+func connectRPC[T any](address string, fn connectRPCFunc) (T, error) {
+	connection, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		a := new(T) // As nil.
+		return *a, err
+	}
+
+	out := fn(connection).(T)
+	return out, nil
+}
+
+type connectRPCFunc func(connection grpc.ClientConnInterface) any

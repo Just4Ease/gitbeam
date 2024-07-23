@@ -1,0 +1,4 @@
+[submodule "gitbeam.baselib"]
+	path = gitbeam.baselib
+	url = git@github.com:Just4Ease/gitbeam.baselib.git
+	branch = dev
