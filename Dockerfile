@@ -17,4 +17,6 @@ COPY --from=builder /go/src/app/app /svc/
 
 WORKDIR /svc/
 
+EXPOSE 8080
+
 CMD ["./app"]
