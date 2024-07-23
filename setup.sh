@@ -15,4 +15,4 @@ cd ../gitbeam.commit.monitor && git submodule update --init --recursive --remote
 cp .env.example .env || exit;
 cd - || exit;
 
-docker-compose up
+docker-compose up --build
