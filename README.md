@@ -15,7 +15,6 @@ Dependencies
 > Gateway: https://github.com/Just4Ease/gitbeam
 
 > Repo Manager Microservice: https://github.com/Just4Ease/gitbeam.repo.manager
- 
 
 > Commit Monitor Microservice: https://github.com/Just4Ease/gitbeam.commit.monitor
 

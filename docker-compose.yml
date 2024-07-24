@@ -28,6 +28,6 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
-      - COMMIT_MONITOR_URL=commit_monitor:8002
+      - COMMITS_MONITOR_URL=commit_monitor:8002
       - REPO_MANAGER_URL=repo_manager:8001
 
