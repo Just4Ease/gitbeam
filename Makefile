@@ -25,10 +25,11 @@ proto:
 
 
 .PHONY: test
-test:
+test: gen-mocks
 	go test -v ./... -cover
 
 gen-mocks:
+	go get github.com/golang/mock/gomock
 	go generate ./...
 
 tools:

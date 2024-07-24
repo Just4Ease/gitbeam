@@ -1,0 +1,12 @@
+{
+  "parentCommitIDs": [
+    "e877f261d62572f2aa4657331e0d20ae40ba2842"
+  ],
+  "date": "2024-07-23T08:01:28Z",
+  "message": "HistoryBackend: Drop HistoryDBTasks in Closing()\n\nHistoryBackend's destructor ensures (via DCHECK) that there is no\nscheduled commit, i.e. basically that Closing() has been called just\nbefore.\nThis could be violated if there was a posted HistoryDBTask at the time\nClosing() was run: The task would keep a refptr to the HistoryBackend,\nso it'd delay the destructor invocation.\n\nThis CL fixes that by wrapping any current posted HistoryDBTask into\na CancelableOnceClosure, similar to what's done for the\n`scheduled_commit_`. That allows us to cancel the task in Closing().\n\nBug: 354474887\nChange-Id: I946d8a2bf90c0a9c124f982ba609425cdeea64e4\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/5724455\nReviewed-by: Sophie Chang <sophiechang@chromium.org>\nCommit-Queue: Marc Treib <treib@chromium.org>\nCr-Commit-Position: refs/heads/main@{#1331602}",
+  "author": "Marc Treib",
+  "repoName": "chromium",
+  "ownerName": "chromium",
+  "url": "https://github.com/chromium/chromium/commit/a70fc91846eaa0da2db1de18b8f344b485eb7996",
+  "sha": "a70fc91846eaa0da2db1de18b8f344b485eb7996"
+}

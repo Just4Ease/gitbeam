@@ -8,6 +8,7 @@ Dependencies
 - Go 1.24
 - Sqlite DB
 - Chi Router v5 ( as pure as net/http )
+- gRPC
 
 ### Dependencies
 
@@ -27,16 +28,39 @@ SKIP ALL THE STEPS ABOVE, run only one command. Ensure you have docker running.
 ./setup.sh
 ```
 
-Setup Process:
+Test Process:
+```shell
+make test
+
+# or
+
+go test -v ./... -cover
+```
 
 
-- go run main.go 
 
-Repo Manager Microservice runs on port 8001
-Commit Monitor Microservice runs on port 8002
-Gateway runs on Port 8080
+
+- Repo Manager Microservice runs on port 8001
+- Commit Monitor Microservice runs on port 8002
+- Gateway runs on Port 8080
 
 I've attached the following system architecture and sequence diagrams.
+
+See docs/v2.microservices/
+
+### System Architecture Diagram
+![System Architecture](docs/v2.microservices/system_architecture.png)
+
+---
+
+### Repo Manager Workflow Diagram
+![Repo Manager](docs/v2.microservices/repo_manager.png)
+
+---
+
+### Commit Monitor Workflow Diagram
+![Commit Monitor](docs/v2.microservices/commit_monitor.png)
+
 
 I'm looking forward to hearing your feedback. 🚀
 Kind Regards.

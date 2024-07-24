@@ -16,26 +16,20 @@ func main() {
 	//prettyJson(repo)
 
 	// Page 1: f9bbab669b6f33b228c6bbda8477d643ad58388e and d5dffa29e74bebe402cbf23c2b1c2ecf33e84971
-	commits, _, _ := ghClient.Repositories.ListCommits(context.Background(), "brave", "brave-browser", &github.CommitsListOptions{
-		ListOptions: github.ListOptions{
-			PerPage: 1,
-			Page:    1,
-		},
-	})
+	commit, _, _ := ghClient.Repositories.GetCommit(context.Background(), "chromium", "chromium", "a70fc91846eaa0da2db1de18b8f344b485eb7996", nil)
 
-	for _, commit := range commits {
-		//author := commit.GetCommitter().GetLogin()
-		parents := commit.Parents
-		url := commit.GetHTMLURL()
-		commitURL := commit.GetCommit().GetHTMLURL()
+	author := commit.GetCommit().GetAuthor().GetName()
+	parents := commit.Parents
+	url := commit.GetHTMLURL()
+	commitURL := commit.GetCommit().GetHTMLURL()
 
-		fmt.Println("html1: ", url)
-		fmt.Println("html2: ", commitURL)
-		for _, parent := range parents {
-			fmt.Println("parent sha: ", parent.GetSHA())
-		}
+	fmt.Println("author: ", author)
+	fmt.Println("html1: ", url)
+	fmt.Println("html2: ", commitURL)
+	for _, parent := range parents {
+		fmt.Println("parent sha: ", parent.GetSHA())
 	}
-	//prettyJson(commits)
+	prettyJson(commit)
 }
 
 const (

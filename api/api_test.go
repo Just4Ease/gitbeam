@@ -1,14 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
-	"gitbeam/core"
-	"gitbeam/events"
+	"fmt"
+	"gitbeam/api/pb/commits"
+	gitRepos "gitbeam/api/pb/repos"
+	"gitbeam/mocks"
 	"gitbeam/models"
-	"gitbeam/repository"
-	"gitbeam/repository/sqlite"
-	"gitbeam/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/golang/mock/gomock"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -18,59 +19,117 @@ import (
 	"testing"
 )
 
-func TestListCommits(t *testing.T) {
+func TestListRepositories(t *testing.T) {
 	logger := logrus.New()
-	service := setupService(logger)
-	router := chi.NewMux()
-	New(service, nil, logger).Routes(router)
+	controller := gomock.NewController(t)
+	defer controller.Finish()
 
-	req, err := http.NewRequest(http.MethodGet, "/commits?ownerName=brave&repoName=brave-browser", nil)
+	ctx := context.Background()
+	repoRPCMock := mocks.NewMockGitBeamRepositoryServiceClient(controller)
+	repoRPCMock.EXPECT().ListGitRepositories(gomock.Any(), &gitRepos.Void{}).MaxTimes(1).Return(
+		&gitRepos.ListGitRepositoriesResponse{
+			Repos: []*gitRepos.Repo{
+				{Name: "chromium"},
+				{Name: "brave"},
+			},
+		}, nil)
+
+	router := chi.NewMux()
+	New(nil, repoRPCMock, logger).Routes(router)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/repos", nil)
+
 	assert.Nil(t, err)
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Body.String(), "chromium")
+	assert.Contains(t, rr.Body.String(), "brave")
 }
 
 func TestGetRepo(t *testing.T) {
 	logger := logrus.New()
-	service := setupService(logger)
-	router := chi.NewMux()
-	New(service, nil, logger).Routes(router)
+	controller := gomock.NewController(t)
+	defer controller.Finish()
 
-	req, err := http.NewRequest(http.MethodGet, "/repos/brave/brave-browser", nil)
+	ownerName := "chromium"
+	repoName := "chromium"
+
+	repoRPCMock := mocks.NewMockGitBeamRepositoryServiceClient(controller)
+	repoRPCMock.EXPECT().GetGitRepo(gomock.Any(), &gitRepos.GetGitRepoRequest{
+		OwnerName: ownerName,
+		RepoName:  repoName,
+	}).MaxTimes(1).Return(
+		&gitRepos.Repo{
+			Name:  repoName,
+			Owner: ownerName,
+		}, nil)
+
+	router := chi.NewMux()
+	New(nil, repoRPCMock, logger).Routes(router)
+
+	req, err := http.NewRequest(http.MethodGet, "/repos/chromium/chromium", nil)
 	assert.Nil(t, err)
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code)
 
+	assert.Contains(t, rr.Body.String(), repoName)
+	assert.Contains(t, rr.Body.String(), ownerName)
 	var result models.Result
 	assert.Nil(t, json.NewDecoder(rr.Body).Decode(&result))
 	assert.Equal(t, true, result.Success)
 }
 
-func setupService(logger *logrus.Logger) *core.GitBeamService {
-	var eventStore store.EventStore
-	var dataStore repository.DataStore
-	var err error
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	logger.SetOutput(os.Stdout)
-	logger.SetLevel(logrus.InfoLevel)
+func TestListCommits(t *testing.T) {
+	logger := logrus.New()
+	controller := gomock.NewController(t)
+	defer controller.Finish()
 
-	//Using SQLite as the mini persistent storage.
-	//( in a real world system, this would be any production level or vendor managed db )
-	if dataStore, err = sqlite.NewSqliteRepo("test_data.db"); err != nil {
-		logger.WithError(err).Fatal("failed to initialize sqlite database repository")
-	}
+	ownerName := "chromium"
+	repoName := "chromium"
 
-	// A channel based pub/sub messaging system.
-	//( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
-	eventStore = store.NewEventStore(logger)
+	//ctx := context.Background()
+	mockRepoRPC := mocks.NewMockGitBeamRepositoryServiceClient(controller)
+	mockCommitsRPC := mocks.NewMockGitBeamCommitsServiceClient(controller)
 
-	// If the dependencies were more than 3, I would use a variadic function to inject them.
-	//Clarity is better here for this exercise.
-	service := core.NewGitBeamService(logger, eventStore, dataStore, nil)
+	file, err := os.Open("../seeds/commit.json")
+	assert.Nil(t, err)
 
-	// To handle event-based background activities. ( in a real world system, this would be apache-pulsar, kafka, nats.io or rabbitmq )
-	go events.NewEventHandler(eventStore, logger, service).Listen()
-	return service
+	var commit *commits.Commit
+	assert.Nil(t, json.NewDecoder(file).Decode(&commit))
+
+	mockRepoRPC.EXPECT().GetGitRepo(gomock.Any(), &gitRepos.GetGitRepoRequest{
+		OwnerName: ownerName,
+		RepoName:  repoName,
+	}).MaxTimes(1).Return(
+		&gitRepos.Repo{
+			Name:  repoName,
+			Owner: ownerName,
+		}, nil)
+
+	mockCommitsRPC.EXPECT().ListCommits(gomock.Any(), &commits.CommitFilterParams{
+		Page:      1,
+		Limit:     1,
+		OwnerName: ownerName,
+		RepoName:  repoName,
+	}).MaxTimes(1).Return(
+		&commits.ListCommitResponse{
+			Data: []*commits.Commit{
+				commit,
+			},
+		},
+		nil,
+	)
+	router := chi.NewMux()
+	New(mockCommitsRPC, mockRepoRPC, logger).Routes(router)
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/commits?ownerName=%s&repoName=%s&page=1&limit=1&", ownerName, repoName), nil)
+
+	assert.Nil(t, err)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Body.String(), commit.Author)
+	assert.Contains(t, rr.Body.String(), commit.Sha)
 }
