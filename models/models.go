@@ -32,10 +32,10 @@ type Repo struct {
 	URL           string `json:"url"`
 	Languages     string `json:"language"`
 	Meta          string `json:"meta"`
-	ForkCount     int    `json:"forkCounts"`
-	StarCount     int    `json:"starCounts"`
-	OpenIssues    int    `json:"openIssues"`
-	WatchersCount int    `json:"watchersCount"`
+	ForkCount     int64  `json:"forkCounts"`
+	StarCount     int64  `json:"starCounts"`
+	OpenIssues    int64  `json:"openIssues"`
+	WatchersCount int64  `json:"watchersCount"`
 }
 
 type TopCommitAuthor struct {
