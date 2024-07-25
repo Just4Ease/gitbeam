@@ -63,10 +63,9 @@ go test -v ./... -cover
 }
 ```
 
-- The payload above, is what is used to instruct the commit monitor on how to pull commits from a repo.
-- The `durationInHours` field is used to update the scheduler the interval for monitoring
-  commits, higher values will update the scheduler to dynamically change the interval for monitoring commits.
-- `fromDate` and `toDate` are optional fields. They tell the commit monitor what timeline to pull commits from in the git commit history, and subsequently the commit monitor continues to track latest changes in the git repository.
+- The payload above, is what is used to instruct the commit monitor on how to pull commits from a Git repository.
+- `durationInHours`: This field sets the interval (in hours) for pulling/monitoring commits from the Git repository. It can be updated at any time to change the scheduler interval. ( minimum value is 1 ) 
+- `fromDate` and `toDate` are optional fields. They specify the timeline for pulling commits from the Git commit history. After retrieving the commits within this timeline, the commit monitor will continue to track the latest changes in the Git repository.
 ---
 
 * ###### To stop monitoring commits
