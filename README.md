@@ -10,8 +10,10 @@ Dependencies
 - Chi Router v5 ( as pure as net/http )
 - gRPC
 
-### Dependencies
 
+
+
+#### System codebase breakdown
 > Gateway: https://github.com/Just4Ease/gitbeam
 
 > Repo Manager Microservice: https://github.com/Just4Ease/gitbeam.repo.manager
@@ -20,10 +22,10 @@ Dependencies
 
 > Base Lib: https://github.com/Just4Ease/gitbeam.baselib
 
-
-SKIP ALL THE STEPS ABOVE, run only one command. Ensure you have docker running.
-
+### How to start the service.
+#### Clone this repository, and run the command below.
 ```shell
+
 ./setup.sh
 ```
 
@@ -58,7 +60,7 @@ See docs/v2.microservices/
 ![Commit Monitor](docs/v2.microservices/commit_monitor.png)
 
 
-### Video Demo Example
+### Video Demo of how it works.
 [Click Here To Watch Video Demo: https://drive.google.com/file/d/1R8E0pVdYpNkQ2dzXLC0y_zYEXCzRTUNS/view?usp=sharing](https://drive.google.com/file/d/1R8E0pVdYpNkQ2dzXLC0y_zYEXCzRTUNS/view?usp=sharing)
 
 
