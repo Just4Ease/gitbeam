@@ -25,16 +25,18 @@ Dependencies
 ### How to start the service.
 #### Clone this repository, and run the command below.
 ```shell
-
+git clone https://github.com/Just4Ease/gitbeam
+cd gitbeam
 ./setup.sh
 ```
 
-Test Process:
+### How to test the service
 ```shell
+cd gitbeam
 make test
 
 # or
-
+cd gitbeam
 go test -v ./... -cover
 ```
 
