@@ -41,6 +41,57 @@
 					},
 					"response": [
 						{
+							"name": "Get Repository - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/repos/:ownerName/:repoName",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"repos",
+										":ownerName",
+										":repoName"
+									],
+									"variable": [
+										{
+											"key": "ownerName",
+											"value": "brave",
+											"description": "The owner of the repository - could be an individual or an organisation username."
+										},
+										{
+											"key": "repoName",
+											"value": "brave-browser",
+											"description": "The repository that needs to be retrieved from github."
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 21 Jul 2024 15:13:05 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "423"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Successfully retrieved repo\",\n    \"data\": {\n        \"timeCreated\": \"2017-11-09T23:44:38Z\",\n        \"timeUpdated\": \"2024-07-21T10:07:51Z\",\n        \"name\": \"brave-browser\",\n        \"owner\": \"brave\",\n        \"description\": \"Brave browser for Android, iOS, Linux, macOS, Windows.\",\n        \"url\": \"https://github.com/brave/brave-browser\",\n        \"language\": \"JavaScript\",\n        \"forkCounts\": 2228,\n        \"starCounts\": 17062,\n        \"openIssues\": 7509,\n        \"watchersCount\": 17062,\n        \"isSaved\": true,\n        \"meta\": {}\n    }\n}"
+						},
+						{
 							"name": "Get Repository - Invalid Owner or Repo Name",
 							"originalRequest": {
 								"method": "GET",
@@ -137,57 +188,6 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"success\": false,\n    \"message\": \"github repo not found\"\n}"
-						},
-						{
-							"name": "Get Repository - Success",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "http://localhost:8080/repos/:ownerName/:repoName",
-									"protocol": "http",
-									"host": [
-										"localhost"
-									],
-									"port": "8080",
-									"path": [
-										"repos",
-										":ownerName",
-										":repoName"
-									],
-									"variable": [
-										{
-											"key": "ownerName",
-											"value": "brave",
-											"description": "The owner of the repository - could be an individual or an organisation username."
-										},
-										{
-											"key": "repoName",
-											"value": "brave-browser",
-											"description": "The repository that needs to be retrieved from github."
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json; charset=utf-8"
-								},
-								{
-									"key": "Date",
-									"value": "Sun, 21 Jul 2024 15:13:05 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "423"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"message\": \"Successfully retrieved repo\",\n    \"data\": {\n        \"timeCreated\": \"2017-11-09T23:44:38Z\",\n        \"timeUpdated\": \"2024-07-21T10:07:51Z\",\n        \"name\": \"brave-browser\",\n        \"owner\": \"brave\",\n        \"description\": \"Brave browser for Android, iOS, Linux, macOS, Windows.\",\n        \"url\": \"https://github.com/brave/brave-browser\",\n        \"language\": \"JavaScript\",\n        \"forkCounts\": 2228,\n        \"starCounts\": 17062,\n        \"openIssues\": 7509,\n        \"watchersCount\": 17062,\n        \"isSaved\": true,\n        \"meta\": {}\n    }\n}"
 						}
 					]
 				},
@@ -233,15 +233,15 @@
 								},
 								{
 									"key": "Date",
-									"value": "Sun, 21 Jul 2024 15:10:49 GMT"
+									"value": "Wed, 24 Jul 2024 14:10:27 GMT"
 								},
 								{
-									"key": "Content-Length",
-									"value": "442"
+									"key": "Transfer-Encoding",
+									"value": "chunked"
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"message\": \"Successfully retrieved list of repositories\",\n    \"data\": [\n        {\n            \"timeCreated\": \"2017-11-09T23:44:38Z\",\n            \"timeUpdated\": \"2024-07-21T10:07:51Z\",\n            \"name\": \"brave-browser\",\n            \"owner\": \"brave\",\n            \"description\": \"Brave browser for Android, iOS, Linux, macOS, Windows.\",\n            \"url\": \"https://github.com/brave/brave-browser\",\n            \"language\": \"JavaScript\",\n            \"forkCounts\": 2228,\n            \"starCounts\": 17062,\n            \"openIssues\": 7509,\n            \"watchersCount\": 17062,\n            \"isSaved\": false,\n            \"meta\": {}\n        }\n    ]\n}"
+							"body": "{\n    \"success\": true,\n    \"message\": \"Successfully retrieved list of repositories\",\n    \"data\": [\n        {\n            \"timeCreated\": \"2018-02-05T20:55:32Z\",\n            \"timeUpdated\": \"2024-07-22T20:49:39Z\",\n            \"name\": \"chromium\",\n            \"owner\": \"chromium\",\n            \"description\": \"The official GitHub mirror of the Chromium source\",\n            \"url\": \"https://github.com/chromium/chromium\",\n            \"language\": \"C++\",\n            \"forkCounts\": 6779,\n            \"starCounts\": 18290,\n            \"openIssues\": 94,\n            \"watchersCount\": 18290,\n            \"meta\": \"{}\"\n        },\n        {\n            \"timeCreated\": \"2017-11-09T23:44:38Z\",\n            \"timeUpdated\": \"2024-07-23T05:06:35Z\",\n            \"name\": \"brave-browser\",\n            \"owner\": \"brave\",\n            \"description\": \"Brave browser for Android, iOS, Linux, macOS, Windows.\",\n            \"url\": \"https://github.com/brave/brave-browser\",\n            \"language\": \"JavaScript\",\n            \"forkCounts\": 2228,\n            \"starCounts\": 17068,\n            \"openIssues\": 7504,\n            \"watchersCount\": 17068,\n            \"meta\": \"github.Repository{ID:110178895, NodeID:\\\"MDEwOlJlcG9zaXRvcnkxMTAxNzg4OTU=\\\", Owner:github.User{Login:\\\"brave\\\", ID:12301619, NodeID:\\\"MDEyOk9yZ2FuaXphdGlvbjEyMzAxNjE5\\\", AvatarURL:\\\"https://avatars.githubusercontent.com/u/12301619?v=4\\\", HTMLURL:\\\"https://github.com/brave\\\", GravatarID:\\\"\\\", Type:\\\"Organization\\\", SiteAdmin:false, URL:\\\"https://api.github.com/users/brave\\\", EventsURL:\\\"https://api.github.com/users/brave/events{/privacy}\\\", FollowingURL:\\\"https://api.github.com/users/brave/following{/other_user}\\\", FollowersURL:\\\"https://api.github.com/users/brave/followers\\\", GistsURL:\\\"https://api.github.com/users/brave/gists{/gist_id}\\\", OrganizationsURL:\\\"https://api.github.com/users/brave/orgs\\\", ReceivedEventsURL:\\\"https://api.github.com/users/brave/received_events\\\", ReposURL:\\\"https://api.github.com/users/brave/repos\\\", StarredURL:\\\"https://api.github.com/users/brave/starred{/owner}{/repo}\\\", SubscriptionsURL:\\\"https://api.github.com/users/brave/subscriptions\\\"}, Name:\\\"brave-browser\\\", FullName:\\\"brave/brave-browser\\\", Description:\\\"Brave browser for Android, iOS, Linux, macOS, Windows.\\\", Homepage:\\\"https://brave.com\\\", DefaultBranch:\\\"master\\\", CreatedAt:github.Timestamp{2017-11-09 23:44:38 +0000 UTC}, PushedAt:github.Timestamp{2024-07-23 04:02:15 +0000 UTC}, UpdatedAt:github.Timestamp{2024-07-23 05:06:35 +0000 UTC}, HTMLURL:\\\"https://github.com/brave/brave-browser\\\", CloneURL:\\\"https://github.com/brave/brave-browser.git\\\", GitURL:\\\"git://github.com/brave/brave-browser.git\\\", SSHURL:\\\"git@github.com:brave/brave-browser.git\\\", SVNURL:\\\"https://github.com/brave/brave-browser\\\", Language:\\\"JavaScript\\\", Fork:false, ForksCount:2228, NetworkCount:2228, OpenIssuesCount:7504, OpenIssues:7504, StargazersCount:17068, SubscribersCount:388, WatchersCount:17068, Watchers:17068, Size:27294, Organization:github.Organization{Login:\\\"brave\\\", ID:12301619, NodeID:\\\"MDEyOk9yZ2FuaXphdGlvbjEyMzAxNjE5\\\", AvatarURL:\\\"https://avatars.githubusercontent.com/u/12301619?v=4\\\", HTMLURL:\\\"https://github.com/brave\\\", Type:\\\"Organization\\\", URL:\\\"https://api.github.com/users/brave\\\", EventsURL:\\\"https://api.github.com/users/brave/events{/privacy}\\\", ReposURL:\\\"https://api.github.com/users/brave/repos\\\"}, AllowForking:true, WebCommitSignoffRequired:false, Topics:[\\\"brave\\\" \\\"browser\\\" \\\"chromium\\\" \\\"linux\\\" \\\"macos\\\" \\\"windows\\\"], CustomProperties:map[maintainers:kjozwiak,LaurenWags,mihaiplesa], Archived:false, Disabled:false, License:github.License{Key:\\\"mpl-2.0\\\", Name:\\\"Mozilla Public License 2.0\\\", URL:\\\"https://api.github.com/licenses/mpl-2.0\\\", SPDXID:\\\"MPL-2.0\\\"}, Private:false, HasIssues:true, HasWiki:true, HasPages:false, HasProjects:true, HasDownloads:true, HasDiscussions:false, IsTemplate:false, URL:\\\"https://api.github.com/repos/brave/brave-browser\\\", ArchiveURL:\\\"https://api.github.com/repos/brave/brave-browser/{archive_format}{/ref}\\\", AssigneesURL:\\\"https://api.github.com/repos/brave/brave-browser/assignees{/user}\\\", BlobsURL:\\\"https://api.github.com/repos/brave/brave-browser/git/blobs{/sha}\\\", BranchesURL:\\\"https://api.github.com/repos/brave/brave-browser/branches{/branch}\\\", CollaboratorsURL:\\\"https://api.github.com/repos/brave/brave-browser/collaborators{/collaborator}\\\", CommentsURL:\\\"https://api.github.com/repos/brave/brave-browser/comments{/number}\\\", CommitsURL:\\\"https://api.github.com/repos/brave/brave-browser/commits{/sha}\\\", CompareURL:\\\"https://api.github.com/repos/brave/brave-browser/compare/{base}...{head}\\\", ContentsURL:\\\"https://api.github.com/repos/brave/brave-browser/contents/{+path}\\\", ContributorsURL:\\\"https://api.github.com/repos/brave/brave-browser/contributors\\\", DeploymentsURL:\\\"https://api.github.com/repos/brave/brave-browser/deployments\\\", DownloadsURL:\\\"https://api.github.com/repos/brave/brave-browser/downloads\\\", EventsURL:\\\"https://api.github.com/repos/brave/brave-browser/events\\\", ForksURL:\\\"https://api.github.com/repos/brave/brave-browser/forks\\\", GitCommitsURL:\\\"https://api.github.com/repos/brave/brave-browser/git/commits{/sha}\\\", GitRefsURL:\\\"https://api.github.com/repos/brave/brave-browser/git/refs{/sha}\\\", GitTagsURL:\\\"https://api.github.com/repos/brave/brave-browser/git/tags{/sha}\\\", HooksURL:\\\"https://api.github.com/repos/brave/brave-browser/hooks\\\", IssueCommentURL:\\\"https://api.github.com/repos/brave/brave-browser/issues/comments{/number}\\\", IssueEventsURL:\\\"https://api.github.com/repos/brave/brave-browser/issues/events{/number}\\\", IssuesURL:\\\"https://api.github.com/repos/brave/brave-browser/issues{/number}\\\", KeysURL:\\\"https://api.github.com/repos/brave/brave-browser/keys{/key_id}\\\", LabelsURL:\\\"https://api.github.com/repos/brave/brave-browser/labels{/name}\\\", LanguagesURL:\\\"https://api.github.com/repos/brave/brave-browser/languages\\\", MergesURL:\\\"https://api.github.com/repos/brave/brave-browser/merges\\\", MilestonesURL:\\\"https://api.github.com/repos/brave/brave-browser/milestones{/number}\\\", NotificationsURL:\\\"https://api.github.com/repos/brave/brave-browser/notifications{?since,all,participating}\\\", PullsURL:\\\"https://api.github.com/repos/brave/brave-browser/pulls{/number}\\\", ReleasesURL:\\\"https://api.github.com/repos/brave/brave-browser/releases{/id}\\\", StargazersURL:\\\"https://api.github.com/repos/brave/brave-browser/stargazers\\\", StatusesURL:\\\"https://api.github.com/repos/brave/brave-browser/statuses/{sha}\\\", SubscribersURL:\\\"https://api.github.com/repos/brave/brave-browser/subscribers\\\", SubscriptionURL:\\\"https://api.github.com/repos/brave/brave-browser/subscription\\\", TagsURL:\\\"https://api.github.com/repos/brave/brave-browser/tags\\\", TreesURL:\\\"https://api.github.com/repos/brave/brave-browser/git/trees{/sha}\\\", TeamsURL:\\\"https://api.github.com/repos/brave/brave-browser/teams\\\", Visibility:\\\"public\\\"}\"\n        }\n    ]\n}"
 						}
 					]
 				}
@@ -624,7 +624,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"ownerName\": \"brave\",\n    \"repoName\": \"brave-browser\",\n    \"fromDate\": \"2024-01-05\",\n    \"toDate\": \"2024-07-01\"\n}",
+							"raw": "{\n    \"ownerName\": \"chromium\",\n    \"repoName\": \"chromium\",\n    \"fromDate\": \"2024-07-23\",\n    \"toDate\": \"2024-07-24\",\n    \"durationInHours\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -632,13 +632,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{BaseURL}}/commits/start-mirroring",
+							"raw": "{{BaseURL}}/commits/start-monitoring",
 							"host": [
 								"{{BaseURL}}"
 							],
 							"path": [
 								"commits",
-								"start-mirroring"
+								"start-monitoring"
 							]
 						},
 						"description": "This Endpoint is used to get a git repository\n\nIt requires the following valid query strings:\n\n- ownerName\n    \n- repoName"
