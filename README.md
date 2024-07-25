@@ -49,25 +49,6 @@ go test -v ./... -cover
 - Repo Manager Microservice runs on port 8001
 - Commit Monitor Microservice runs on port 8002
 
-I've attached the following system architecture and sequence diagrams.
-
-See docs/v2.microservices/
-
-### System Architecture Diagram
-
-![System Architecture](docs/v2.microservices/system_architecture.png)
-
----
-
-### Repo Manager Workflow Diagram
-
-![Repo Manager](docs/v2.microservices/repo_manager.png)
-
----
-
-### Commit Monitor Workflow Diagram
-
-![Commit Monitor](docs/v2.microservices/commit_monitor.png)
 
 #### Notes on the commit monitor.
 * ###### To start monitoring commits
@@ -100,6 +81,25 @@ See docs/v2.microservices/
 ### Video Demo of how it works.
 
 [Click Here To Watch Video Demo: https://drive.google.com/file/d/1R8E0pVdYpNkQ2dzXLC0y_zYEXCzRTUNS/view?usp=sharing](https://drive.google.com/file/d/1R8E0pVdYpNkQ2dzXLC0y_zYEXCzRTUNS/view?usp=sharing)
+
+
+## I've attached the following system architecture and sequence diagrams below.
+
+### System Architecture Diagram
+
+![System Architecture](docs/v2.microservices/system_architecture.png)
+
+---
+
+### Repo Manager Workflow Diagram
+
+![Repo Manager](docs/v2.microservices/repo_manager.png)
+
+---
+
+### Commit Monitor Workflow Diagram
+
+![Commit Monitor](docs/v2.microservices/commit_monitor.png)
 
 I'm looking forward to hearing your feedback. 🚀
 Kind Regards.
